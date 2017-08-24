@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang=en-us>
+
+<head>
+    <meta charset=UTF-8>
+    <title>Githunt</title>
+    <link rel=stylesheet href=assets/css/main.css>
+    <link href='https://fonts.googleapis.com/css?family=Montserrat:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="assets/css/font-awesome.min.css" />
+</head>
+
+<body>
+    <div class=main>
+
+        <div class="container">
+
+            <div class="top-header">
+                <div class="brand">
+                    <h1>Githunt</h1>
+                    <p>Hunting the best Github projects</p>
+                </div>
+
+                <div class="top-nav">
+                    <label class="btn-select btn" for="date-jump">
+                        <select name="date-jump" id="date-jump" class="repos-filter">
+                            <option value="biday">Daily</option>
+                            <option value="week" selected>Weekly</option>
+                            <option value="biweek">BiWeekly</option>
+                            <option value="month">Monthly</option>
+                            <option value="trimonth">TriMonthly</option>
+                            <option value="year">Yearly</option>
+                            <option value="biyear">BiYearly</option>
+                            <option value="triyear">TriYearly</option>
+                        </select>
+                        <i class="fa fa-caret-down"></i>
+                    </label>
+
+                    <label class="btn-select btn" for="language">
+                        <select name="language" id="language" class="repos-filter">
+                            <option value="">All Languages</option>
+                            <option value="Brainfuck">Brainfuck</option>
+                            <option value="C">C</option>
+                            <option value="CSharp">C#</option>
+                            <option value="C++">C++</option>
+                            <option value="CSS">CSS</option>
+                            <option value="Elixir">Elixir</option>
+                            <option value="Elm">Elm</option>
+                            <option value="Go">Go</option>
+                            <option value="HTML">HTML</option>
+                            <option value="Java">Java</option>
+                            <option value="JavaScript">JavaScript</option>
+                            <option value="Jupyter Notebook">Jupyter Notebook</option>
+                            <option value="Kotlin">Kotlin</option>
+                            <option value="Python">Python</option>
+                            <option value="Rust">Rust</option>
+                            <option value="TypeScript">TypeScript</option>
+                        </select>
+                        <i class="fa fa-caret-down"></i>
+                    </label>
+
+                </div>
+            </div>
+
+            <div class="main-content">
+            </div>
+
+            <div class="loading-more hide">
+                <img src="assets/img/126.gif" width="40" alt="">
+            </div>
+
+            <script src="assets/js/jquery.js"></script>
+            <script src="assets/js/moment.min.js"></script>
+            <script src=assets/js/storage.js></script>
+            <script src=assets/js/main.js></script>
+</body>
+
+</html>
