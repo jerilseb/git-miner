@@ -4,5 +4,6 @@
 
 > Chrome extension - Replaces new tab with trending github repositories
 
+Forked from https://github.com/kamranahmedse/githunt
 
 
