@@ -47,14 +47,14 @@ function HubStorage() {
       anyPopulated = false;
 
     $(selector).each(function(index, input) {
-      var $input = $(input),
-        name = $input.attr("name"),
-        value = storage.getItem(name).split(",");
+      var $input = $(input);
+      var name = $input.attr("name");
+      var value = storage.getItem(name).split(",");
 
       if (value) {
         if (value.length == 1) value = value[0];
         $input.val(value);
-        $input.multiselect("select", value);
+        if ($input[0].tagName == "SELECT") $input.multiselect("select", value);
         anyPopulated = true;
       }
     });

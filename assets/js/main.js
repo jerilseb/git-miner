@@ -12,6 +12,7 @@ function HubTab() {
     // token = 'a1a420cbad0a4d3eccda',    // API token. Don't grin, it's a dummy
     languageFilter = "#language", // Filter for repositories language
     dateFilter = "#date-jump", // Date jump filter i.e. weekly, monthly or yearly
+    searchFIlter = "#query", // Search query filter
     tokenStorageKey = "githunt_token", // Storage key for the github token
     requestCount = 0, // Track the count of how many times the refresh was tried
     reposApiUrl = "https://api.github.com/search/repositories", // URL for the repos
@@ -141,7 +142,8 @@ function HubTab() {
   var getApiFilters = function() {
     var dateRange = getNextDateRange();
     var languages = $(languageFilter).val();
-    var langCondition = "";
+    var searchQuery = $(searchFIlter).val();
+    var langCondition = searchQuery ? searchQuery + "+" : "";
 
     // If language filter is applied, populate the language
     // chunk to put in URL
@@ -288,6 +290,18 @@ function HubTab() {
       });
   };
 
+  var initiateFetch = function() {
+    // Increase the request count so that refresh is enabled
+    requestCount++;
+
+    // Remove the existing fetches repositories
+    $(repoGroupSelector).remove();
+    // Persist the filters
+    filterStorage.persistFilters(filterSelector);
+    // Refresh the repositories
+    fetchTrendingRepos();
+  };
+
   /**
    * Perform all the UI bindings
    */
@@ -304,15 +318,11 @@ function HubTab() {
 
     // On change of repository filters
     $(document).on("change", filterSelector, function() {
-      // Increase the request count so that refresh is enabled
-      requestCount++;
+      initiateFetch();
+    });
 
-      // Remove the existing fetches repositories
-      $(repoGroupSelector).remove();
-      // Persist the filters
-      filterStorage.persistFilters(filterSelector);
-      // Refresh the repositories
-      fetchTrendingRepos();
+    $(document).on("click", "#search_btn", () => {
+      initiateFetch();
     });
 
     $(languageFilter).multiselect({

@@ -49,6 +49,18 @@ a, a:focus, a:hover {
     outline: none;
 }
 
+.btn.input {
+    text-align: left;
+    width: 140px;
+}
+
+.btn.search {
+    background: #ddd;
+    color: #222;
+    margin-left: -12px;
+    border-left: 2px solid #aaaaaa;
+}
+
 .quote-item a {
     border-bottom: 1px solid #0B0BBD;
     padding-bottom: 6px;
@@ -63,9 +75,6 @@ a, a:focus, a:hover {
     color: #b300de;
 }
 
-.main {
-    position: relative;
-}
 
 #particles-js {
     position: absolute;
@@ -112,7 +121,7 @@ div.container {
 }
 
 .top-nav {
-    float: right;
+    /* float: right; */
     line-height: 80px;
 }
 
