@@ -54,13 +54,6 @@ a, a:focus, a:hover {
     width: 140px;
 }
 
-.btn.search {
-    background: #ddd;
-    color: #222;
-    margin-left: -12px;
-    border-left: 2px solid #aaaaaa;
-}
-
 .quote-item a {
     border-bottom: 1px solid #0B0BBD;
     padding-bottom: 6px;
