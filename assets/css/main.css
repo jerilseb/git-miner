@@ -116,21 +116,22 @@ div.container {
 .top-nav {
     /* float: right; */
     line-height: 80px;
+    text-align: right
 }
 
 .main-content {
     margin-top: 40px;
+    text-align: center;
 }
 
 .content-item {
-    display: block;
-    width: 305px;
+    display: inline-block;
+    text-align: left;    
+    width: 22%;
     box-sizing: border-box;
     padding: 15px;
     height: 140px;
     background: #d8d8d8;
-    float: left;
-    position: relative;
     margin: 0 25px 20px 0px;
     border-radius: 4px;
     box-shadow: 2px 4px #333;
@@ -146,7 +147,7 @@ div.container {
 
 .content-item .header {
     font-weight: bold;
-    font-size: 17px;
+    font-size: 16px;
     margin-bottom: 10px;
     max-height: 2.7em;
     overflow: hidden;
