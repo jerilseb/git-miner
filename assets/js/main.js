@@ -148,7 +148,7 @@ function HubTab() {
     // If language filter is applied, populate the language
     // chunk to put in URL
     languages.forEach(language => {
-      langCondition += "language:" + language + "+";
+      langCondition += 'language:"' + language + '"+';
     });
 
     // If user has set the github token in storage pass that
@@ -164,11 +164,10 @@ function HubTab() {
       queryParams:
         "?sort=stars&order=desc&q=" +
         langCondition +
-        'created:"' +
+        "created:" +
         dateRange.lower +
-        " .. " +
+        ".." +
         dateRange.upper +
-        '"' +
         apiToken,
       dateRange: dateRange
     };
