@@ -4,6 +4,8 @@
 <head>
     <meta charset=UTF-8>
     <title>Githunt</title>
+    <link rel="stylesheet" href="assets/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="assets/css/bootstrap-multiselect.css" />
     <link rel=stylesheet href=assets/css/main.css>
     <link href='https://fonts.googleapis.com/css?family=Montserrat:400,700' rel='stylesheet' type='text/css'>
     <link rel="stylesheet" href="assets/css/font-awesome.min.css" />
@@ -13,7 +15,6 @@
     <div class=main>
 
         <div class="container">
-
             <div class="top-header">
                 <div class="brand">
                     <h1>Githunt</h1>
@@ -21,10 +22,9 @@
                 </div>
 
                 <div class="top-nav">
-                    <label class="btn-select btn" for="date-jump">
-                        <select name="date-jump" id="date-jump" class="repos-filter">
+                        <select name="date-jump" id="date-jump" class="repos-filter hide">
                             <option value="biday">Daily</option>
-                            <option value="week" selected>Weekly</option>
+                            <option value="week">Weekly</option>
                             <option value="biweek">BiWeekly</option>
                             <option value="month">Monthly</option>
                             <option value="trimonth">TriMonthly</option>
@@ -32,12 +32,8 @@
                             <option value="biyear">BiYearly</option>
                             <option value="triyear">TriYearly</option>
                         </select>
-                        <i class="fa fa-caret-down"></i>
-                    </label>
 
-                    <label class="btn-select btn" for="language">
-                        <select name="language" id="language" class="repos-filter">
-                            <option value="">All Languages</option>
+                        <select name="language" id="language" class="repos-filter hide" multiple="multiple">
                             <option value="Brainfuck">Brainfuck</option>
                             <option value="C">C</option>
                             <option value="CSharp">C#</option>
@@ -55,8 +51,6 @@
                             <option value="Rust">Rust</option>
                             <option value="TypeScript">TypeScript</option>
                         </select>
-                        <i class="fa fa-caret-down"></i>
-                    </label>
 
                 </div>
             </div>
@@ -68,7 +62,9 @@
                 <img src="assets/img/126.gif" width="40" alt="">
             </div>
 
-            <script src="assets/js/jquery.js"></script>
+            <script src="assets/js/jquery.min.js"></script>
+            <script src="assets/js/bootstrap.min.js"></script>
+            <script src="assets/js/bootstrap-multiselect.js"></script>
             <script src="assets/js/moment.min.js"></script>
             <script src=assets/js/storage.js></script>
             <script src=assets/js/main.js></script>

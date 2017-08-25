@@ -26,12 +26,12 @@ function HubTab() {
   var filterStorage = new HubStorage();
 
   /**
-     * Generates the HTML for batch of repositories
-     * @param repositories
-     * @param lowerDate
-     * @param upperDate
-     * @returns {string}
-     */
+   * Generates the HTML for batch of repositories
+   * @param repositories
+   * @param lowerDate
+   * @param upperDate
+   * @returns {string}
+   */
   function generateReposHtml(repositories, lowerDate, upperDate) {
     var html = "";
 
@@ -50,32 +50,30 @@ function HubTab() {
 
       html +=
         '<div class="content-item">' +
-        '<div class="header"><a href="' +
+        '<a href="' +
         repository.html_url +
         '">' +
+        '<div class="header">' +
         repFullName +
-        "</a></div>" +
+        "</div>" +
         '<p class="tagline">' +
         repFullDesc +
         "</p>" +
         '<div class="footer">' +
-
         '<span class="footer-stat">' +
         '<i class="fa fa-star-o"></i>' +
         repository.stargazers_count +
         "</span>" +
-
         '<span class="footer-stat">' +
         '<i class="fa fa-code-fork"></i>' +
         repository.forks_count +
         "</span>" +
-
         '<span class="footer-stat">' +
-        '<i class="fa fa-commenting-o"></i>' +
-        repository.open_issues +
+        '<i class="fa fa-comment-o"></i>' +
+        repository.language +
         "</span>" +
-
         "</div>" +
+        "</a>" +
         "</div>";
     });
 
@@ -100,11 +98,10 @@ function HubTab() {
   }
 
   /**
-     * Gets the next date range for which repositories need to be fetched
-     * @returns {{}}
-     */
+   * Gets the next date range for which repositories need to be fetched
+   * @returns {{}}
+   */
   var getNextDateRange = function() {
-
     var multiplier = 1;
     // Lower limit for when the last repos batch was fetched
     var lastFetched = $(repoGroupSelector)
@@ -114,14 +111,13 @@ function HubTab() {
       dateRange = {},
       dateJump = $(dateFilter).val();
 
-      if(dateJump.slice(0,2) == "bi") {
-        dateJump = dateJump.slice(2);
-        multiplier = multiplier * 2;
-      }
-      else if (dateJump.slice(0,3) == "tri") {
-        dateJump = dateJump.slice(3);
-        multiplier = multiplier * 3;
-      }
+    if (dateJump.slice(0, 2) == "bi") {
+      dateJump = dateJump.slice(2);
+      multiplier = multiplier * 2;
+    } else if (dateJump.slice(0, 3) == "tri") {
+      dateJump = dateJump.slice(3);
+      multiplier = multiplier * 3;
+    }
 
     if (lastFetched) {
       dateRange.upper = lastFetched;
@@ -139,19 +135,19 @@ function HubTab() {
   };
 
   /**
-     * Gets the filters to be passed to API
-     * @returns {{queryParams: string, dateRange: {}}}
-     */
+   * Gets the filters to be passed to API
+   * @returns {{queryParams: string, dateRange: {}}}
+   */
   var getApiFilters = function() {
-    var dateRange = getNextDateRange(),
-      language = $(languageFilter).val(),
-      langCondition = "";
+    var dateRange = getNextDateRange();
+    var languages = $(languageFilter).val();
+    var langCondition = "";
 
     // If language filter is applied, populate the language
     // chunk to put in URL
-    if (language) {
-      langCondition = "language:" + language + " ";
-    }
+    languages.forEach(language => {
+      langCondition += "language:" + language + "+";
+    });
 
     // If user has set the github token in storage pass that
     // alongside the request.
@@ -177,8 +173,8 @@ function HubTab() {
   };
 
   /**
-     * Saves the hunt result in localstorage to avoid requests on each tab change
-     */
+   * Saves the hunt result in localstorage to avoid requests on each tab change
+   */
   var saveHuntResult = function() {
     var huntResults = $(".main-content").html();
     if (!huntResults) {
@@ -193,9 +189,9 @@ function HubTab() {
   };
 
   /**
-     * Checks whether the refresh
-     * @returns {boolean}
-     */
+   * Checks whether the refresh
+   * @returns {boolean}
+   */
   var shouldRefresh = function() {
     // Allow refresh if..
     // ..It is not first request
@@ -232,9 +228,9 @@ function HubTab() {
   };
 
   /**
-     * Fetches the trending repositories based upon the filters applied
-     * @returns {boolean}
-     */
+   * Fetches the trending repositories based upon the filters applied
+   * @returns {boolean}
+   */
   var fetchTrendingRepos = function() {
     // If there is some request, already in progress or there was
     // an error, do not allow further requests.
@@ -249,23 +245,27 @@ function HubTab() {
     var filters = getApiFilters(),
       url = reposApiUrl + filters.queryParams;
 
-    trendingRequest = $.ajax({
-      url: url,
-      method: "get",
-      beforeSend: function() {
-        $(".loading-more").removeClass("hide");
-      },
-      success: function(data) {
+    trendingRequest = true;
+    $(".loading-more").removeClass("hide");
+
+    fetch(url)
+      .then(response => {
+        if (response.ok) return response.json();
+        else throw new Error("Network response was not ok.");
+      })
+      .then(data => {
         var finalHtml = generateReposHtml(
           data.items,
           filters.dateRange.lower,
           filters.dateRange.upper
         );
         $(mainContainer).append(finalHtml);
-      },
-      error: function(xhr, status, error) {
-        var error = JSON.parse(xhr.responseText),
-          message = error.message || "";
+        trendingRequest = false;
+        $(".loading-more").addClass("hide");
+        saveHuntResult();
+      })
+      .catch(error => {
+        var message = error.message || "";
 
         if (message && message.toLowerCase() == "bad credentials") {
           $(".main-content").replaceWith(
@@ -283,19 +283,14 @@ function HubTab() {
             "Oops! Could you please refresh the page."
           );
         }
-      },
-      complete: function() {
         trendingRequest = false;
         $(".loading-more").addClass("hide");
-
-        saveHuntResult();
-      }
-    });
+      });
   };
 
   /**
-     * Perform all the UI bindings
-     */
+   * Perform all the UI bindings
+   */
   var bindUI = function() {
     // Bind the scroll to fetch repositories when bottom reached
     $(window).on("scroll", function() {
@@ -319,20 +314,26 @@ function HubTab() {
       // Refresh the repositories
       fetchTrendingRepos();
     });
+
+    $(languageFilter).multiselect({
+      nonSelectedText: "All Languages"
+    });
+
+    $(dateFilter).multiselect();
   };
 
   return {
     /**
-         * initialize the hub page
-         */
+     * initialize the hub page
+     */
     init: function() {
       bindUI();
       this.refresh();
     },
 
     /**
-         * Refresh the listing and filters
-         */
+     * Refresh the listing and filters
+     */
     refresh: function() {
       filterStorage.populateFilters(filterSelector);
       fetchTrendingRepos();

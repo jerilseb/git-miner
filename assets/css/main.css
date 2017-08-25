@@ -32,7 +32,7 @@ body {
     color: #333;
 }
 
-a {
+a, a:focus, a:hover {
     text-decoration: none;
     color: #333;
 }
@@ -81,7 +81,6 @@ a {
 }
 
 div.container {
-    width: 950px;
     margin: auto;
 }
 
@@ -123,37 +122,44 @@ div.container {
 
 .content-item {
     display: block;
-    width: 295px;
+    width: 305px;
     box-sizing: border-box;
     padding: 15px;
-    height: 150px;
+    height: 140px;
     background: #d8d8d8;
     float: left;
     position: relative;
-    margin: 0 20px 20px 0px;
+    margin: 0 25px 20px 0px;
     border-radius: 4px;
-    box-shadow: none;
+    box-shadow: 2px 4px #333;
     color: #333;
     position: relative;
     overflow: hidden;
+    transition: all 0.1s ease-in-out 0s;
+}
+
+.content-item:hover {
+    transform: scale(1.03);
 }
 
 .content-item .header {
     font-weight: bold;
     font-size: 17px;
     margin-bottom: 10px;
+    max-height: 2.7em;
     overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .content-item p.tagline {
     text-overflow: ellipsis;
-    height: 70px;
+    max-height: 2.7em;
     display: -webkit-box;
     overflow: hidden;
     -webkit-line-clamp: 6;
     -webkit-box-orient: vertical;
-    font-size: 13px;
-    line-height: 20px;
+    font-size: 12px;
+    line-height: 16px;
 }
 
 .content-item .footer {
@@ -203,35 +209,6 @@ div.footer span.footer-stat {
 
 h1.date-head:first-letter {
     text-transform: capitalize;
-}
-
-.btn.btn-select {
-    padding-left: 0;
-    padding-right: 0;
-    position: relative;
-    cursor: pointer;
-    border-color: white;
-}
-
-.btn-select select {
-    font-size: 16px;
-    line-height: 20px;
-    border: 0;
-    border-radius: 0;
-    height: 34px;
-    -webkit-appearance: none;
-    display: inline-block;
-    width: 150px;
-    outline: none;
-    background: white;
-    padding: 0px 5px 0px 10px;
-    cursor: pointer;
-}
-
-.btn-select .fa {
-    position: absolute;
-    right: 5px;
-    top: 10px;
 }
 
 div.footer span.footer-stat .fa {
