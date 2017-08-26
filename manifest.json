@@ -4,7 +4,7 @@
   "manifest_version": 2,
   "name": "Git Miner",
   "short_name": "gitminer",
-  "description": "Replace the new tab with a list of trending repositories on github belonging to any technology that you chose.",
+  "description": "Replace the new tab with a list of trending repositories on github",
   "version": "2.1",
   "permissions": [
     "tabs",
@@ -13,16 +13,16 @@
     "*://*.github.com/*"
   ],
   "icons": {
-    "16": "assets/img/icon16.png",
-    "48": "assets/img/icon48.png",
-    "128": "assets/img/icon128.png"
+    "16": "assets/img/16.png",
+    "48": "assets/img/48.png",
+    "128": "assets/img/128.png"
   },
   "chrome_url_overrides": {
-    "newtab": "githunt.html"
+    "newtab": "gitminer.html"
   },
   "options_page": "options.html",
   "browser_action": {
-    "default_title": "Githunt",
-    "default_icon": "assets/img/icon128.png"
+    "default_title": "Git Miner",
+    "default_icon": "assets/img/128.png"
   }
 }
