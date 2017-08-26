@@ -121,8 +121,8 @@ div.container {
 
 .brand img {
     display: inline-block;
-    padding-left: 5px;
-    filter: invert(88%);
+    margin-right: 10px;
+    filter: invert(90%);
     vertical-align: -30%;
 }
 
@@ -148,8 +148,8 @@ div.container {
     text-align: left;    
     width: 22%;
     box-sizing: border-box;
-    padding: 12px;
-    height: 140px;
+    padding: 10px 12px;
+    height: 136px;
     background: #d8d8d8;
     margin: 0 25px 20px 0px;
     border-radius: 4px;
