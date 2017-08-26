@@ -160,7 +160,7 @@ div.container {
 .content-item .header {
     font-weight: bold;
     font-size: 16px;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     max-height: 2.7em;
     overflow: hidden;
     text-overflow: ellipsis;
