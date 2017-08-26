@@ -28,7 +28,7 @@ body {
     padding-top: 1px;
     font-family: 'Montserrat', sans-serif;
     font-size: 14px;
-    background: #444;
+    background: #333;
     color: #333;
 }
 
@@ -43,15 +43,26 @@ a, a:focus, a:hover {
     padding: 8px 12px;
     border: 2px solid #333;
     color: #333;
-    margin: 0 5px;
+    margin: 0 2px;
     background: white;
     box-shadow: 2px 2px #333;
     outline: none;
+    min-width: 130px;
 }
 
 .btn.input {
     text-align: left;
-    width: 140px;
+    width: 145px;
+    cursor: text;
+    padding-left: 27px;
+}
+
+#search-icon { 
+    position: absolute;
+    top: 33px;
+    right: 138px;
+    font-size: 15px;
+    color: #aaa;
 }
 
 .quote-item a {
@@ -129,7 +140,7 @@ div.container {
     text-align: left;    
     width: 22%;
     box-sizing: border-box;
-    padding: 15px;
+    padding: 12px;
     height: 140px;
     background: #d8d8d8;
     margin: 0 25px 20px 0px;
@@ -143,6 +154,7 @@ div.container {
 
 .content-item:hover {
     transform: scale(1.03);
+    background: #e6e6e6;
 }
 
 .content-item .header {
@@ -156,7 +168,7 @@ div.container {
 
 .content-item p.tagline {
     text-overflow: ellipsis;
-    max-height: 2.7em;
+    max-height: 3.8em;
     display: -webkit-box;
     overflow: hidden;
     -webkit-line-clamp: 6;
@@ -167,7 +179,7 @@ div.container {
 
 .content-item .footer {
     position: absolute;
-    bottom: 12px;
+    bottom: 10px;
 }
 
 div.footer span.footer-stat {

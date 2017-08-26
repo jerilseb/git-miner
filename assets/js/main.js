@@ -39,7 +39,7 @@ function HubTab() {
     $(repositories).each(function(index, repository) {
       // Make the name and description XSS safe
       var repFullName = $("<div>")
-        .text(repository.full_name)
+        .text(repository.name)
         .html();
       var repFullDesc = $("<div>")
         .text(repository.description)
@@ -85,7 +85,7 @@ function HubTab() {
     var finalHtml =
       '<div class="content-batch"><h1 class="date-head" data-date="' +
       lowerDate +
-      '">' +
+      '">From ' +
       humanDate +
       " - " +
       formattedLower +

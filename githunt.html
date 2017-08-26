@@ -27,12 +27,12 @@
                             <select name="date-jump" id="date-jump" class="repos-filter hide"  size="2">
                                 <option value="biday">Daily</option>
                                 <option value="week">Weekly</option>
-                                <option value="biweek">BiWeekly</option>
+                                <option value="biweek">Bi-Weekly</option>
                                 <option value="month">Monthly</option>
-                                <option value="trimonth">TriMonthly</option>
+                                <option value="trimonth">Tri-Monthly</option>
                                 <option value="year">Yearly</option>
-                                <option value="biyear">BiYearly</option>
-                                <option value="triyear">TriYearly</option>
+                                <option value="biyear">Bi-Yearly</option>
+                                <option value="triyear">Tri-Yearly</option>
                             </select>
 
                             <select name="language" id="language" class="repos-filter hide" multiple="multiple">
@@ -41,6 +41,7 @@
                                 <option value="CSharp">C#</option>
                                 <option value="C++">C++</option>
                                 <option value="CSS">CSS</option>
+                                <option value="Erlang">Erlang</option>
                                 <option value="Elixir">Elixir</option>
                                 <option value="Elm">Elm</option>
                                 <option value="Go">Go</option>
@@ -50,11 +51,14 @@
                                 <option value="Jupyter Notebook">Jupyter Notebook</option>
                                 <option value="Kotlin">Kotlin</option>
                                 <option value="Python">Python</option>
+                                <option value="Ruby">Ruby</option>
                                 <option value="Rust">Rust</option>
+                                <option value="Scala">Scala</option>
                                 <option value="TypeScript">TypeScript</option>
                             </select>
 
-                            <input name="search" id="search-query" type="text" class="btn input repos-filter" placeholder="&#128269; Any"/>
+                            <span class="fa fa-search" id="search-icon"></span>
+                            <input name="search" id="search-query" type="text" class="btn input repos-filter" placeholder=" Any"/>
                         </div>
                     </div>
 
@@ -64,7 +68,7 @@
             </div>
 
             <div class="loading-more hide">
-                <img src="assets/img/126.gif" width="40" alt="">
+                <img src="assets/img/126.gif" width="180" alt="">
             </div>
         </div>
     </div>

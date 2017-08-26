@@ -49,9 +49,10 @@ function HubStorage() {
     $(selector).each(function(index, input) {
       var $input = $(input);
       var name = $input.attr("name");
-      var value = storage.getItem(name).split(",");
+      var value = storage.getItem(name);
 
       if (value) {
+        value = value.split(",");
         if (value.length == 1) value = value[0];
         $input.val(value);
         if ($input[0].tagName == "SELECT") $input.multiselect("select", value);
