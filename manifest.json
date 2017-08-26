@@ -2,8 +2,8 @@
 "update_url": "https://clients2.google.com/service/update2/crx",
 
   "manifest_version": 2,
-  "name": "Git Sweeper",
-  "short_name": "Githunt",
+  "name": "Git Miner",
+  "short_name": "gitminer",
   "description": "Replace the new tab with a list of trending repositories on github belonging to any technology that you chose.",
   "version": "2.1",
   "permissions": [
@@ -20,7 +20,6 @@
   "chrome_url_overrides": {
     "newtab": "githunt.html"
   },
-  "homepage_url": "http://kamranahmed.info/",
   "options_page": "options.html",
   "browser_action": {
     "default_title": "Githunt",
