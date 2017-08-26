@@ -160,6 +160,7 @@ div.container {
 .content-item .header {
     font-weight: bold;
     font-size: 16px;
+    line-height: 1.2;
     margin-bottom: 8px;
     max-height: 2.7em;
     overflow: hidden;
