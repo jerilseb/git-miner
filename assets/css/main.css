@@ -141,6 +141,7 @@ div.container {
 .main-content {
     margin-top: 40px;
     text-align: center;
+    color: #dddddd;
 }
 
 .content-item {
@@ -230,7 +231,7 @@ div.footer span.footer-stat {
     margin: -40px 20px 40px 0;
     padding: 8px 0px 8px 10px;
     font-weight: normal;
-    font-size: 16px;
+    font-size: 14px;
     text-align: center;
 }
 
@@ -265,5 +266,6 @@ div.footer span.footer-stat .fa {
 .quote-item {
     margin: 60px 0 20px;
     padding: 20px 10px;
-    background: #ccc;
+    background: #dddddd;
+    color: #333333;
 }

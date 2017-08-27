@@ -268,6 +268,8 @@ function HubTab() {
       .catch(error => {
         var message = error.message || "";
 
+        console.log(message);
+
         if (message && message.toLowerCase() == "bad credentials") {
           $(".main-content").replaceWith(
             '<h3 class="quote-item error-quote">Oops! Seems to be a problem with your API token. Could you verify the API token you entered in extension options.</h3>'
@@ -280,8 +282,8 @@ function HubTab() {
             '<h3 class="quote-item error-quote">Oops! Seems like you did not set the API token. Wait another hour for github to refresh your rate limit or better add a token in `Githunt Options` to hunt more.</h3>'
           );
         } else {
-          $(".main-content").replaceWith(
-            "Oops! Could you please refresh the page."
+          $(".main-content").html(
+            '<h4 class="quote-item error-quote">Oops! Failed to fetch</h4>'
           );
         }
         trendingRequest = false;
