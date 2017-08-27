@@ -4,38 +4,43 @@
  * @constructor
  */
 function HubOptions() {
+  var hubStorage = new HubStorage();
 
-    var hubStorage = new HubStorage();
+  /**
+   * Performs the UI bindings
+   */
+  function bindUI() {
+    $(document).on("click", ".save-token", function(e) {
+      e.preventDefault();
 
+      hubStorage.persistFilters(".githunt_token");
+      $(".quote-item").html("Woohoo! Token saved, happy hunting.");
+    });
+
+    $(document).on("change", "#per-page", function() {
+      hubStorage.persistFilters("#per-page");
+    });
+
+    $("#per-page").multiselect();
+  }
+
+  return {
     /**
-     * Performs the UI bindings
+     * Initializes the options page
      */
-    function bindUI() {
-        $(document).on('click', '.save-token', function (e) {
-            e.preventDefault();
+    init: function() {
+      var tokenPopulated = hubStorage.populateFilters(".githunt_token");
+      if (tokenPopulated) {
+        $(".quote-item").html("Token already saved. Better go for the hunt!");
+      }
 
-            hubStorage.persistFilters('.githunt_token');
-            $('.quote-item').html('Woohoo! Token saved, happy hunting.');
-        });
+      hubStorage.populateFilters("#per-page");
+      bindUI();
     }
-
-    return {
-
-        /**
-         * Initializes the options page
-         */
-        init: function () {
-            var tokenPopulated = hubStorage.populateFilters('.githunt_token');
-            if (tokenPopulated) {
-                $('.quote-item').html('Token already saved. Better go for the hunt!');
-            }
-
-            bindUI();
-        }
-    };
+  };
 }
 
-$(function () {
-    var hubOptions = new HubOptions();
-    hubOptions.init();
+$(function() {
+  var hubOptions = new HubOptions();
+  hubOptions.init();
 });

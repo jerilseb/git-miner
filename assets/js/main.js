@@ -35,6 +35,12 @@ function HubTab() {
    */
   function generateReposHtml(repositories, lowerDate, upperDate) {
     var html = "";
+    var limit = filterStorage.getStorage().getItem("per-page");
+
+    if (limit) limit = parseInt(limit);
+    else limit = 30;
+
+    repositories = repositories.slice(0, limit);
 
     $(repositories).each(function(index, repository) {
       // Make the name and description XSS safe
@@ -332,6 +338,7 @@ function HubTab() {
     init: function() {
       bindUI();
       this.refresh();
+      console.log(filterStorage.getStorage().getItem("per-page"));
     },
 
     /**
