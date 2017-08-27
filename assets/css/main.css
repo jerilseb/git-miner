@@ -218,8 +218,8 @@ div.footer span.footer-stat {
     margin: 150px auto 50px;
 }
 
-.loading-more h3 {
-    font-size: 20px;
+.loading-more img {
+    filter: invert(90%);
 }
 
 .date-head {
