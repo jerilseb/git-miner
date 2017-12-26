@@ -118,10 +118,10 @@ function HubTab() {
       dateRange = {},
       dateJump = $(dateFilter).val();
 
-    if (dateJump.slice(0, 2) == "bi") {
+    if (dateJump && dateJump.slice(0, 2) == "bi") {
       dateJump = dateJump.slice(2);
       multiplier = multiplier * 2;
-    } else if (dateJump.slice(0, 3) == "tri") {
+    } else if (dateJump && dateJump.slice(0, 3) == "tri") {
       dateJump = dateJump.slice(3);
       multiplier = multiplier * 3;
     }
@@ -328,7 +328,9 @@ function HubTab() {
       nonSelectedText: "All Languages"
     });
 
-    $(dateFilter).multiselect();
+    $(dateFilter).multiselect({
+      nonSelectedText: "Select time range"
+    });
   };
 
   return {

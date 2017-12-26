@@ -5,7 +5,7 @@
   "name": "Git Miner",
   "short_name": "gitminer",
   "description": "Replace the new tab with a list of trending repositories on github",
-  "version": "2.1",
+  "version": "1.0",
   "permissions": [
     "tabs",
     "storage",

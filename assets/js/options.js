@@ -19,9 +19,12 @@ function HubOptions() {
 
     $(document).on("change", "#per-page", function() {
       hubStorage.persistFilters("#per-page");
+      $(".quote-item").html("Changes will take effect from the next fetch");
     });
 
-    $("#per-page").multiselect();
+    $("#per-page").multiselect({
+      nonSelectedText: "Select here"
+    });
   }
 
   return {
@@ -31,7 +34,7 @@ function HubOptions() {
     init: function() {
       var tokenPopulated = hubStorage.populateFilters(".githunt_token");
       if (tokenPopulated) {
-        $(".quote-item").html("Token already saved. Better go for the hunt!");
+        $(".quote-item").html("Token already saved");
       }
 
       hubStorage.populateFilters("#per-page");
