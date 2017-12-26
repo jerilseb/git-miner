@@ -1,6 +1,6 @@
-<p align="center">
-<img width="600" src="http://i.imgur.com/KUEq97P.png" text-align="center">
-</p>
+# Git Miner
+
+![mine-iloveimg-resized](https://user-images.githubusercontent.com/3944720/34356773-e0408cb8-ea66-11e7-94e4-8f67dcdfe7ce.png)
 
 > Chrome extension - Replaces new tab with trending github repositories
 
