@@ -4,6 +4,10 @@
 
 > Chrome extension - Replaces new tab with trending github repositories
 
+## Installation
+
+Best way to install is directly from the chrome web store. Here's the [link](https://chrome.google.com/webstore/detail/git-miner/ceagnngoghaeebohcjenlfmiaflkmifg?hl=en)
+
 Forked from https://github.com/kamranahmedse/githunt
 
 
