@@ -1,14 +1,11 @@
 {
-  "update_url": "https://clients2.google.com/service/update2/crx",
   "manifest_version": 3,
   "name": "Git Miner",
   "short_name": "gitminer",
   "description": "Replace the new tab with a list of trending repositories on github",
   "version": "1.0",
   "permissions": [
-    "tabs",
-    "storage",
-    "webNavigation"
+    "storage"
   ],
   "host_permissions": [
     "*://*.github.com/*"
@@ -21,7 +18,6 @@
   "chrome_url_overrides": {
     "newtab": "gitminer.html"
   },
-  "options_page": "options.html",
   "action": {
     "default_title": "Git Miner",
     "default_icon": "assets/img/128.png"

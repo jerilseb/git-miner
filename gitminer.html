@@ -1,90 +1,237 @@
 <!doctype html>
-<html lang=en-us>
+<html lang="en-us">
 
 <head>
-    <meta charset=UTF-8>
+    <meta charset="UTF-8">
     <title>Git Miner</title>
-    <link rel="stylesheet" href="assets/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="assets/css/bootstrap-multiselect.css" />
-    <link rel="stylesheet" href="assets/css/main.css">
+    <link rel="stylesheet" href="assets/css/output.css">
     <link href='https://fonts.googleapis.com/css?family=Montserrat:400,700' rel='stylesheet' type='text/css'>
-    <link rel="stylesheet" href="assets/css/font-awesome.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
+
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            margin: 1rem 4rem;
+            padding: 0;
+            min-height: 100vh;
+            background-color: #1a2234;
+        }
+
+        .container {
+            padding: 2rem;
+        }
+
+        /* Header styles */
+        .site-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 3rem;
+        }
+
+        .site-branding {
+            flex-shrink: 0;
+        }
+
+        .site-title {
+            font-size: 2.25rem;
+            font-weight: 700;
+            color: #f8fafc;
+            margin: 0;
+            line-height: 1.2;
+        }
+
+        .site-description {
+            color: #94a3b8;
+            font-size: 1.1rem;
+            margin: 0.5rem 0 0 0;
+        }
+
+        /* Modern Filter Styles */
+        .filter-group {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            justify-content: flex-end;
+            flex-wrap: nowrap;
+        }
+
+        .filter-item {
+            position: relative;
+        }
+
+        /* Common button/input styles */
+        .filter-button, 
+        .search-input,
+        #date-jump {
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            background-color: rgba(30, 41, 59, 0.8);
+            color: #ffffff;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+            min-width: 140px;
+            backdrop-filter: blur(10px);
+        }
+
+        .filter-button:hover,
+        .search-input:hover {
+            background-color: rgba(44, 55, 73, 0.9);
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+
+        .filter-button:focus,
+        .search-input:focus {
+            outline: none;
+            border-color: rgb(59, 130, 246);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+        }
+
+        /* Search input specific styles */
+        .search-container {
+            position: relative;
+        }
+
+        .search-input {
+            padding-left: 2.5rem;
+            width: 220px;
+        }
+
+        .search-input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* Dropdown styles */
+        .multiselect-container {
+            margin-top: 0.5rem;
+            border-radius: 0.5rem;
+            background-color: rgb(30, 41, 59);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+            position: absolute;
+            z-index: 1000;
+            width: 100%;
+            min-width: max-content;
+        }
+
+        .multiselect-container > li > a {
+            padding: 0.5rem 1rem;
+            color: #ffffff;
+            border-radius: 0.25rem;
+            transition: all 0.2s ease;
+            display: block;
+            text-decoration: none;
+        }
+
+        .multiselect-container > li > a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .content-item {
+            margin: 0.5rem;
+            padding: 1.25rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background-color: rgba(17, 24, 39, 0.8);
+            border-radius: 0.5rem;
+        }
+        .content-item:hover {
+            transform: scale(1.01);
+            background: #2d3748;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+        .content-item .tagline {
+            max-height: 3.8em;
+            display: -webkit-box;
+            overflow: hidden;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            color: #9ca3af;
+        }
+        .content-item .footer {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.875rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 0.75rem;
+            margin-top: 0.75rem;
+        }
+        .content-item .footer-stat {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        .content-item .created-at {
+            margin-left: auto;
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+    </style>
 </head>
 
-<body>
-    <div class="container">
-        <div class="row">
-            <div class="top-header">
-                <div class="col-lg-4">
-                    <div class="brand">
-                        <h1>Git Miner</h1>
-                        <p>Mining the best action on Github</p>
-                    </div>
+<body class="bg-gray-800 text-gray-300">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
+        <header class="site-header">
+            <div class="site-branding">
+                <h1 class="site-title">Git Miner</h1>
+                <p class="site-description">Mining the best action on Github</p>
+            </div>
+            
+            <div class="filter-group">
+                <div class="filter-item">
+                    <select id="date-jump" class="filter-button">
+                        <option value="day">Daily</option>
+                        <option value="week">Weekly</option>
+                        <option value="biweek">Bi-Weekly</option>
+                        <option value="month">Monthly</option>
+                        <option value="trimonth">Tri-Monthly</option>
+                        <option value="year">Yearly</option>
+                        <option value="biyear">Bi-Yearly</option>
+                        <option value="triyear">Tri-Yearly</option>
+                    </select>
                 </div>
-                <div class="col-lg-8">
-                            
-                    <div class="top-nav">
-                            <select name="date-jump" id="date-jump" class="repos-filter hide"  size="2">
-                                <option value="biday">Daily</option>
-                                <option value="week">Weekly</option>
-                                <option value="biweek">Bi-Weekly</option>
-                                <option value="month">Monthly</option>
-                                <option value="trimonth">Tri-Monthly</option>
-                                <option value="year">Yearly</option>
-                                <option value="biyear">Bi-Yearly</option>
-                                <option value="triyear">Tri-Yearly</option>
-                            </select>
 
-                            <select name="language" id="language" class="repos-filter hide" multiple="multiple">
-                                <!--option value="Brainfuck">Brainfuck</option-->
-                                <option value="C">C</option>
-                                <option value="CSharp">C#</option>
-                                <option value="C++">C++</option>
-                                <option value="Clojure">Clojure</option>
-                                <option value="CSS">CSS</option>
-                                <option value="Erlang">Erlang</option>
-                                <option value="Elixir">Elixir</option>
-                                <option value="Elm">Elm</option>
-                                <option value="Go">Go</option>
-                                <option value="HTML">HTML</option>
-                                <option value="Haskell">Haskell</option>
-                                <option value="Java">Java</option>
-                                <option value="JavaScript">JavaScript</option>
-                                <option value="Jupyter Notebook">Jupyter Notebook</option>
-                                <option value="Kotlin">Kotlin</option>
-                                <option value="Lua">Lua</option>
-                                <option value="Python">Python</option>
-                                <option value="PHP">PHP</option>
-                                <option value="Ruby">Ruby</option>
-                                <option value="Rust">Rust</option>
-                                <option value="R">R</option>
-                                <option value="Scala">Scala</option>
-                                <option value="Swift">Swift</option>
-                                <option value="TypeScript">TypeScript</option>
-                            </select>
+                <div class="filter-item">
+                    <button type="button" class="filter-button flex items-center justify-between" id="language-filter-button">
+                        <span>All Languages</span>
+                        <svg class="w-5 h-5 ml-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                    <ul class="multiselect-container hidden" id="language-filter-dropdown" role="menu">
+                        <!-- Options will be added here -->
+                    </ul>
+                </div>
 
-                            <span class="fa fa-search" id="search-icon"></span>
-                            <input name="search" id="search-query" type="text" class="btn input repos-filter" placeholder=" Any"/>
-                        </div>
-                    </div>
-
+                <div class="filter-item search-container">
+                    <i class="fa fa-search search-icon"></i>
+                    <input id="search-query" type="text" class="search-input" placeholder="Search repositories..." />
+                </div>
             </div>
+        </header>
 
-            <div class="main-content">
-            </div>
+        <main class="main-content">
+            <!-- Repositories will be added here -->
+        </main>
 
-            <div class="loading-more hide">
-                <img src="assets/img/loading.gif" width="60" alt="">
-            </div>
+        <div class="loading-more hidden text-center my-12">
+            <img src="assets/img/loading.gif" width="60" alt="Loading..." class="inline-block" style="filter: invert(90%);">
         </div>
     </div>
 
-    <script src="assets/js/jquery.min.js"></script>
-    <script src="assets/js/bootstrap.min.js"></script>
-    <script src="assets/js/bootstrap-multiselect.js"></script>
-    <script src="assets/js/moment.min.js"></script>
-    <script src=assets/js/storage.js></script>
-    <script src=assets/js/main.js></script>
+    <script src="assets/js/app.js"></script>
 </body>
 
 </html>
