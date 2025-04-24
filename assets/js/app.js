@@ -145,7 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
       html += `
                   <a href="${repository.html_url}" class="content-item block transition duration-150 ease-in-out">
                       <div class="header text-lg font-bold text-blue-400 truncate">${repFullName}</div>
-                      <p class="tagline text-sm mt-1">${repFullDesc}</p>
+                      <p class="tagline text-sm mt-1 repo-description">${repFullDesc}</p>
                       <div class="footer">
                           <span class="footer-stat text-yellow-400"><i class="fa fa-star-o"></i> ${repository.stargazers_count}</span>
                           <span class="footer-stat text-green-400"><i class="fa fa-code-fork"></i> ${repository.forks_count}</span>

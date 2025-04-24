@@ -191,6 +191,17 @@
             /* Ensure it doesn't shrink below its content's natural min-width */
             min-width: 0; 
         }
+
+        /* Add styles for repository description clamping */
+        .repo-description {
+            display: -webkit-box;
+            -webkit-line-clamp: 3; /* Limit to 3 lines */
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            /* Optional: Add a min-height to prevent collapsing if description is short */
+            min-height: calc(1.2em * 3); /* Adjust 1.2em based on line-height if needed */
+        }
     </style>
 </head>
 
