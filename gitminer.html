@@ -143,6 +143,8 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             background-color: rgba(17, 24, 39, 0.8);
             border-radius: 0.5rem;
+            display: flex;
+            flex-direction: column;
         }
         .content-item:hover {
             transform: scale(1.01);
@@ -152,12 +154,8 @@
             border-color: rgba(255, 255, 255, 0.2);
         }
         .content-item .tagline {
-            max-height: 3.8em;
-            display: -webkit-box;
-            overflow: hidden;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
             color: #9ca3af;
+            margin-bottom: 0.75rem;
         }
         .content-item .footer {
             display: flex;
@@ -166,7 +164,7 @@
             font-size: 0.875rem;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
             padding-top: 0.75rem;
-            margin-top: 0.75rem;
+            margin-top: auto;
         }
         .content-item .footer-stat {
             display: flex;
@@ -177,6 +175,21 @@
             margin-left: auto;
             color: #6b7280;
             font-size: 0.875rem;
+        }
+
+        /* Limit language button width */
+        #language-filter-button {
+            max-width: 280px; /* Adjust as needed */
+        }
+
+        #language-filter-button span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            /* Allow the span to take available space but not push the icon */
+            flex-grow: 1; 
+            /* Ensure it doesn't shrink below its content's natural min-width */
+            min-width: 0; 
         }
     </style>
 </head>
