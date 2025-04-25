@@ -146,7 +146,6 @@ document.addEventListener('DOMContentLoaded', () => {
                       <p class="tagline text-sm mt-1 repo-description">${repFullDesc}</p>
                       <div class="footer">
                           <span class="footer-stat text-yellow-400"><i class="fa fa-star-o"></i> ${repository.stargazers_count}</span>
-                          <span class="footer-stat text-green-400"><i class="fa fa-code-fork"></i> ${repository.forks_count}</span>
                           <span class="footer-stat text-purple-400"><i class="fa fa-code"></i> ${repository.language || 'Unknown'}</span>
                           <span class="created-at"><i class="fa fa-clock-o"></i> ${createdAt}</span>
                       </div>
@@ -367,7 +366,7 @@ document.addEventListener('DOMContentLoaded', () => {
       let errorContent = '<h4 class="quote-item error-quote">Oops! Failed to fetch</h4>';
 
       if (errorMessage.includes("rate limit")) {
-        errorContent = '<h3 class="quote-item error-quote">Oops! Github rate limit exceeded. Wait another hour for github to refresh your rate limit.</h3>';
+        errorContent = '<div class="quote-item error-quote">Oops! Github rate limit exceeded. Wait another hour for github to refresh your rate limit.</div>';
       }
       document.querySelector(".main-content").innerHTML = errorContent;
 
