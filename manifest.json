@@ -3,7 +3,7 @@
   "name": "Git Miner",
   "short_name": "gitminer",
   "description": "Replace the new tab with a list of trending repositories on github",
-  "version": "1.5",
+  "version": "1.6",
   "permissions": [
     "storage",
     "https://api.github.com/*"
