@@ -212,6 +212,9 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (dateJump.startsWith("tri")) {
       dateJump = dateJump.slice(3);
       multiplier *= 3;
+    } else if (dateJump.startsWith("half")) {
+      dateJump = dateJump.slice(4);
+      multiplier *= 0.5;
     }
 
     const dateUnits = {
