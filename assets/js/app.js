@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
   const reposApiUrl = "https://api.github.com/search/repositories";
-  const huntResultKey = "last_hunt_result";
-  const huntTimeKey = "last_hunt_time";
+  const miningResultKey = "last_mining_result";
+  const miningTimeKey = "last_mining_time";
   const refreshDuration = 180; //minutes
   let requestCount = 0;
   let trendingRequest = false;
@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
   async function getOptionsFromStorage() {
     return new Promise((resolve) => {
       chrome.storage.sync.get(
-        ["githunt_token", "per-page", "selectedLanguages", "dateJump"],
+        ["per-page", "selectedLanguages", "dateJump"],
         (result) => {
           resolve(result);
         }
@@ -107,12 +107,10 @@ document.addEventListener('DOMContentLoaded', () => {
   async function populateFilters() {
     const options = await getOptionsFromStorage();
     // Check if options exist, otherwise set defaults
-    const token = options.githunt_token || '';
     perPage = options["per-page"] || '30';
     const savedDateJump = options.dateJump || 'day';
     selectedLanguages = options.selectedLanguages || [];
 
-    await populateFilter("githunt_token", token);
     await populateFilter("per-page", perPage);
     await populateFilter("date-jump", savedDateJump);
 
@@ -264,14 +262,7 @@ document.addEventListener('DOMContentLoaded', () => {
       langCondition += `language:"${language}"+`;
     });
 
-
-    const options = await getOptionsFromStorage();
-    const token = (options && options.githunt_token) ? options.githunt_token.trim() : "";
     let apiToken = "";
-
-    if (token) {
-      apiToken = `&access_token=${token}`;
-    }
 
     return {
       queryParams: `?sort=stars&order=desc&q=${langCondition}created:${dateRange.lower}..${dateRange.upper}${apiToken}`,
@@ -280,15 +271,14 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
 
-
-  async function saveHuntResult() {
+  async function saveMiningResult() {
     const huntResults = document.querySelector(".main-content").innerHTML;
     if (!huntResults) {
       return false;
     }
 
-    localStorage.setItem(huntResultKey, huntResults);
-    localStorage.setItem(huntTimeKey, new Date().toISOString().split('T')[0] + " " + new Date().toISOString().split('T')[1].split('.')[0]);
+    localStorage.setItem(miningResultKey, huntResults);
+    localStorage.setItem(miningTimeKey, new Date().toISOString().split('T')[0] + " " + new Date().toISOString().split('T')[1].split('.')[0]);
 
   }
 
@@ -298,8 +288,8 @@ document.addEventListener('DOMContentLoaded', () => {
       return true;
     }
 
-    const lastHuntResult = localStorage.getItem(huntResultKey);
-    const lastHuntTime = localStorage.getItem(huntTimeKey);
+    const lastHuntResult = localStorage.getItem(miningResultKey);
+    const lastHuntTime = localStorage.getItem(miningTimeKey);
 
 
     if (!lastHuntResult || !lastHuntTime || lastHuntResult.trim() === "undefined") {
@@ -369,19 +359,15 @@ document.addEventListener('DOMContentLoaded', () => {
       document.querySelector(".main-content").insertAdjacentHTML("beforeend", finalHtml);
       trendingRequest = false;
       document.querySelector(".loading-more").classList.add("hidden");
-      await saveHuntResult();
+      await saveMiningResult();
     } catch (error) {
       console.error("Fetch Error:", error.message);
       let errorMessage = error.message;
 
       let errorContent = '<h4 class="quote-item error-quote">Oops! Failed to fetch</h4>';
 
-      if (errorMessage.includes("Bad credentials")) {
-        errorContent = '<h3 class="quote-item error-quote">Oops! Seems to be a problem with your API token. Could you verify the API token you entered in extension options.</h3>';
-        // Reset token in storage.
-        await setOptionsToStorage({ githunt_token: "" });
-      } else if (errorMessage.includes("rate limit")) {
-        errorContent = '<h3 class="quote-item error-quote">Oops! Seems like you did not set the API token or your token has expired. Wait another hour for github to refresh your rate limit or better add a token in `Githunt Options` to hunt more.</h3>';
+      if (errorMessage.includes("rate limit")) {
+        errorContent = '<h3 class="quote-item error-quote">Oops! Github rate limit exceeded. Wait another hour for github to refresh your rate limit.</h3>';
       }
       document.querySelector(".main-content").innerHTML = errorContent;
 
@@ -413,16 +399,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById("search-query").addEventListener("change", async () => await handleFilterChange());
-
-    if (document.querySelector(".save-token")) {
-      document.querySelector(".save-token").addEventListener("click", async (e) => {
-        e.preventDefault();
-        const token = document.querySelector(".githunt_token").value;
-        await setOptionsToStorage({ githunt_token: token });
-        document.querySelector(".quote-item").textContent =
-          "Woohoo! Token saved, happy hunting.";
-      });
-    }
 
     if (document.getElementById("per-page")) {
       document.getElementById("per-page").addEventListener("change", async () => {
