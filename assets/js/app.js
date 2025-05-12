@@ -142,7 +142,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
       html += `
                   <a href="${repository.html_url}" class="content-item block transition duration-150 ease-in-out">
-                      <div class="header text-lg font-bold text-blue-400 truncate">${repFullName}</div>
+                      <div class="header text-lg font-bold text-blue-400 truncate flex items-center">
+                          <img src="${repository.owner.avatar_url}" alt="${repository.owner.login}" class="avatar-img mr-2" width="20" height="20">
+                          ${repFullName}
+                      </div>
                       <p class="tagline text-sm mt-1 repo-description">${repFullDesc}</p>
                       <div class="footer">
                           <span class="footer-stat text-yellow-400"><i class="fa fa-star-o"></i> ${repository.stargazers_count}</span>
