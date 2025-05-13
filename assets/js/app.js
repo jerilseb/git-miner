@@ -160,7 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const finalHtml = `
               <div class="content-batch">
-                  <h1 class="date-head text-lg font-semibold my-4" data-date="${lowerDate}">From ${humanDate} - ${formatDate(lowerDate)} – ${formatDate(upperDate)}</h1>
+                  <h1 class="date-head text-lg text-center my-5" data-date="${lowerDate}">From ${humanDate} - ${formatDate(lowerDate)} – ${formatDate(upperDate)}</h1>
                   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                       ${html}
                   </div>
