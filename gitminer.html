@@ -64,6 +64,12 @@
             text-decoration: none;
         }
 
+        button,
+        input,
+        select {
+            border-radius: 12px;
+        }
+
         .hidden {
             display: none !important;
         }
@@ -77,13 +83,15 @@
         }
 
         .site-header {
+            position: relative;
+            z-index: 20;
             display: grid;
             grid-template-columns: minmax(190px, 0.42fr) minmax(520px, 1fr);
             align-items: end;
             gap: 18px;
             padding: 18px;
             border: 1px solid var(--line);
-            border-radius: 24px;
+            border-radius: 8px;
             background: linear-gradient(135deg, rgba(15, 23, 42, 0.82), rgba(15, 23, 42, 0.52));
             box-shadow: 0 18px 52px rgba(0, 0, 0, 0.28);
             backdrop-filter: blur(22px);
@@ -116,7 +124,7 @@
             gap: 10px;
             padding: 8px;
             border: 1px solid var(--line);
-            border-radius: 18px;
+            border-radius: 8px;
             background: rgba(2, 6, 23, 0.32);
         }
 
@@ -142,7 +150,7 @@
             min-height: 42px;
             padding: 0 13px;
             border: 1px solid var(--line);
-            border-radius: 16px;
+            border-radius: 8px;
             outline: none;
             background: rgba(15, 23, 42, 0.88);
             color: #f8fafc;
@@ -239,41 +247,100 @@
             top: calc(100% + 10px);
             left: 0;
             z-index: 1000;
-            width: min(340px, 88vw);
-            max-height: 360px;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 6px;
+            width: min(380px, 88vw);
+            max-height: 340px;
             overflow: auto;
-            padding: 8px;
-            border: 1px solid var(--line-strong);
-            border-radius: 18px;
-            background: rgba(8, 13, 26, 0.98);
-            box-shadow: 0 28px 70px rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border: 1px solid rgba(125, 211, 252, 0.26);
+            border-radius: 8px;
+            background:
+                linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(2, 6, 23, 0.98)),
+                #020617;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
             backdrop-filter: blur(18px);
+            scrollbar-width: thin;
+            scrollbar-color: rgba(125, 211, 252, 0.55) rgba(15, 23, 42, 0.55);
+        }
+
+        .multiselect-container::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .multiselect-container::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.55);
+            border-radius: 8px;
+        }
+
+        .multiselect-container::-webkit-scrollbar-thumb {
+            border: 2px solid rgba(15, 23, 42, 0.95);
+            border-radius: 8px;
+            background: rgba(125, 211, 252, 0.55);
+        }
+
+        .multiselect-container li {
+            min-width: 0;
         }
 
         .language-option {
             display: flex;
             align-items: center;
             gap: 9px;
-            padding: 10px 12px;
-            border-radius: 12px;
+            min-width: 0;
+            padding: 9px 10px;
+            border: 1px solid transparent;
+            border-radius: 8px;
             color: #dbeafe;
-            font-weight: 700;
+            font-size: 0.9rem;
+            font-weight: 750;
             cursor: pointer;
-            transition: background 140ms ease, color 140ms ease;
+            transition: background 140ms ease, border-color 140ms ease, color 140ms ease, transform 140ms ease;
         }
 
         .language-option:hover {
-            background: rgba(56, 189, 248, 0.11);
+            transform: translateY(-1px);
+            border-color: rgba(125, 211, 252, 0.22);
+            background: rgba(56, 189, 248, 0.1);
             color: #ffffff;
         }
 
+        .language-option:has(input:checked) {
+            border-color: rgba(56, 189, 248, 0.42);
+            background: rgba(56, 189, 248, 0.16);
+            color: #f8fafc;
+        }
+
         .multiselect-container input {
+            appearance: none;
+            display: grid;
             width: 16px;
             height: 16px;
-            accent-color: var(--accent);
+            flex: 0 0 auto;
+            place-items: center;
+            border: 1px solid rgba(148, 163, 184, 0.55);
+            border-radius: 5px;
+            background: rgba(15, 23, 42, 0.95);
+        }
+
+        .multiselect-container input:checked {
+            border-color: var(--accent);
+            background: var(--accent);
+        }
+
+        .multiselect-container input:checked::before {
+            content: "";
+            width: 8px;
+            height: 5px;
+            border: solid #03111f;
+            border-width: 0 0 2px 2px;
+            transform: rotate(-45deg) translateY(-1px);
         }
 
         .main-content {
+            position: relative;
+            z-index: 1;
             margin-top: 34px;
         }
 
@@ -313,7 +380,7 @@
             max-width: 100%;
             padding: 10px 16px;
             border: 1px solid var(--line);
-            border-radius: 999px;
+            border-radius: 12px;
             background: rgba(15, 23, 42, 0.72);
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.18);
         }
@@ -332,7 +399,7 @@
             overflow: hidden;
             padding: 20px;
             border: 1px solid var(--line);
-            border-radius: 14px;
+            border-radius: 12px;
             background:
                 linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.025)),
                 rgba(15, 23, 42, 0.78);
@@ -379,7 +446,7 @@
             gap: 9px;
             padding: 6px 10px 6px 6px;
             border: 1px solid rgba(148, 163, 184, 0.16);
-            border-radius: 999px;
+            border-radius: 12px;
             background: rgba(2, 6, 23, 0.32);
             color: #cbd5e1;
             font-size: 0.8rem;
@@ -453,7 +520,7 @@
             min-height: 32px;
             padding: 7px 10px;
             border: 1px solid rgba(148, 163, 184, 0.14);
-            border-radius: 999px;
+            border-radius: 12px;
             background: rgba(2, 6, 23, 0.28);
             color: #cbd5e1;
             font-size: 0.8rem;
@@ -478,7 +545,7 @@
             max-width: 620px;
             padding: 28px;
             border: 1px solid var(--line);
-            border-radius: 24px;
+            border-radius: 12px;
             background: rgba(15, 23, 42, 0.74);
             box-shadow: var(--shadow);
             color: #cbd5e1;
@@ -540,7 +607,7 @@
             }
 
             .site-header {
-                border-radius: 20px;
+                border-radius: 8px;
                 padding: 14px;
             }
 
