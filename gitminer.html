@@ -387,7 +387,7 @@
 
         .content-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+            grid-template-columns: repeat(4, minmax(0, 1fr));
             gap: 18px;
         }
 
@@ -589,6 +589,12 @@
             }
         }
 
+        @media (max-width: 1180px) {
+            .content-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
+
         @media (max-width: 980px) {
             .site-header {
                 grid-template-columns: 1fr;
@@ -597,6 +603,10 @@
 
             .control-panel {
                 grid-template-columns: 1fr;
+            }
+
+            .content-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
             }
         }
 
