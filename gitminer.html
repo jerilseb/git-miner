@@ -3,241 +3,571 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Git Miner</title>
     <link rel="stylesheet" href="assets/css/output.css">
-    <link href='https://fonts.googleapis.com/css?family=Montserrat:400,700' rel='stylesheet' type='text/css'>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
 
     <style>
+        :root {
+            color-scheme: dark;
+            --bg: #07111f;
+            --panel: rgba(15, 23, 42, 0.72);
+            --panel-strong: rgba(15, 23, 42, 0.9);
+            --line: rgba(148, 163, 184, 0.18);
+            --line-strong: rgba(148, 163, 184, 0.32);
+            --text: #e5eefc;
+            --muted: #94a3b8;
+            --muted-strong: #cbd5e1;
+            --accent: #38bdf8;
+            --accent-2: #a78bfa;
+            --accent-3: #34d399;
+            --danger: #fb7185;
+            --shadow: 0 24px 80px rgba(0, 0, 0, 0.38);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
         body {
-            font-family: 'Montserrat', sans-serif;
-            margin: 1rem 5rem;
-            padding: 0;
+            margin: 0;
             min-height: 100vh;
-            background-color: #1a2234;
+            overflow-x: hidden;
+            background:
+                radial-gradient(circle at 12% -10%, rgba(56, 189, 248, 0.28), transparent 28rem),
+                radial-gradient(circle at 88% 4%, rgba(167, 139, 250, 0.24), transparent 30rem),
+                radial-gradient(circle at 50% 110%, rgba(52, 211, 153, 0.14), transparent 28rem),
+                linear-gradient(135deg, #06101d 0%, #0b1220 46%, #101827 100%);
+            color: var(--text);
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         }
 
-        .container {
-            padding: 2rem;
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0.26;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+            background-size: 72px 72px;
+            mask-image: linear-gradient(to bottom, black, transparent 78%);
         }
 
-        /* Header styles */
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .page-shell {
+            position: relative;
+            z-index: 1;
+            width: min(1440px, calc(100% - 32px));
+            margin: 0 auto;
+            padding: clamp(22px, 4vw, 56px) 0 64px;
+        }
+
         .site-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 3rem;
+            display: grid;
+            grid-template-columns: minmax(190px, 0.42fr) minmax(520px, 1fr);
+            align-items: end;
+            gap: 18px;
+            padding: 18px;
+            border: 1px solid var(--line);
+            border-radius: 24px;
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.82), rgba(15, 23, 42, 0.52));
+            box-shadow: 0 18px 52px rgba(0, 0, 0, 0.28);
+            backdrop-filter: blur(22px);
+            overflow: visible;
         }
 
-        .site-branding {
-            flex-shrink: 0;
+        .title-section {
+            min-width: 0;
         }
 
         .site-title {
-            font-size: 2.25rem;
-            font-weight: 700;
-            color: #f8fafc;
             margin: 0;
-            line-height: 1.2;
+            color: #f8fafc;
+            font-size: clamp(1.8rem, 3vw, 2.55rem);
+            font-weight: 900;
+            letter-spacing: -0.055em;
+            line-height: 1;
         }
 
         .site-description {
-            color: #94a3b8;
-            font-size: 1.1rem;
-            margin: 0.5rem 0 0 0;
+            margin: 7px 0 0;
+            color: var(--muted-strong);
+            font-size: 0.92rem;
+            line-height: 1.4;
         }
 
-        /* Modern Filter Styles */
-        .filter-group {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-            justify-content: flex-end;
-            flex-wrap: nowrap;
+        .control-panel {
+            display: grid;
+            grid-template-columns: minmax(140px, 0.8fr) minmax(200px, 1fr) minmax(240px, 1.35fr);
+            gap: 10px;
+            padding: 8px;
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            background: rgba(2, 6, 23, 0.32);
         }
 
         .filter-item {
             position: relative;
+            min-width: 0;
         }
 
-        /* Common button/input styles */
-        .filter-button, 
+        .filter-label {
+            display: block;
+            margin: 0 0 5px 4px;
+            color: #93c5fd;
+            font-size: 0.66rem;
+            font-weight: 900;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .filter-button,
         .search-input,
         #date-jump {
-            padding: 0.75rem 1rem;
-            border-radius: 0.5rem;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            background-color: rgba(30, 41, 59, 0.8);
-            color: #ffffff;
-            font-size: 0.95rem;
-            transition: all 0.2s ease;
-            min-width: 140px;
-            backdrop-filter: blur(10px);
+            width: 100%;
+            min-height: 42px;
+            padding: 0 13px;
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            outline: none;
+            background: rgba(15, 23, 42, 0.88);
+            color: #f8fafc;
+            font-size: 0.96rem;
+            font-weight: 700;
+            transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease, background 160ms ease;
+        }
+
+        .filter-button {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            cursor: pointer;
         }
 
         .filter-button:hover,
-        .search-input:hover {
-            background-color: rgba(44, 55, 73, 0.9);
-            border-color: rgba(255, 255, 255, 0.25);
+        .search-input:hover,
+        #date-jump:hover {
+            border-color: var(--line-strong);
+            background: rgba(30, 41, 59, 0.94);
         }
 
         .filter-button:focus,
-        .search-input:focus {
-            outline: none;
-            border-color: rgb(59, 130, 246);
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+        .search-input:focus,
+        #date-jump:focus {
+            border-color: rgba(56, 189, 248, 0.8);
+            box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.16);
         }
 
-        /* Search input specific styles */
+        #date-jump {
+            appearance: none;
+            background-image:
+                linear-gradient(45deg, transparent 50%, #bae6fd 50%),
+                linear-gradient(135deg, #bae6fd 50%, transparent 50%);
+            background-position: calc(100% - 19px) 18px, calc(100% - 14px) 18px;
+            background-size: 5px 5px, 5px 5px;
+            background-repeat: no-repeat;
+            padding-right: 38px;
+        }
+
         .search-container {
             position: relative;
         }
 
         .search-input {
-            padding-left: 2.5rem;
-            width: 220px;
+            padding-left: 47px;
         }
 
         .search-input::placeholder {
-            color: rgba(255, 255, 255, 0.6);
+            color: rgba(203, 213, 225, 0.62);
+            font-weight: 600;
         }
 
         .search-icon {
             position: absolute;
-            left: 0.75rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: rgba(255, 255, 255, 0.6);
+            left: 15px;
+            bottom: 11px;
+            display: grid;
+            width: 20px;
+            height: 20px;
+            place-items: center;
+            color: #7dd3fc;
+            font-style: normal;
         }
 
-        /* Dropdown styles */
-        .multiselect-container {
-            margin-top: 0.5rem;
-            border-radius: 0.5rem;
-            background-color: rgb(30, 41, 59);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            padding: 0.5rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
-            position: absolute;
-            z-index: 1000;
-            width: 100%;
-            min-width: max-content;
-        }
-
-        .multiselect-container > li > a {
-            padding: 0.5rem 1rem;
-            color: #ffffff;
-            border-radius: 0.25rem;
-            transition: all 0.2s ease;
-            display: block;
-            text-decoration: none;
-        }
-
-        .multiselect-container > li > a:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-
-        .content-item {
-            margin: 0.5rem;
-            padding: 1.25rem;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            background-color: rgba(17, 24, 39, 0.8);
-            border-radius: 0.5rem;
-            display: flex;
-            flex-direction: column;
-        }
-        .content-item:hover {
-            transform: scale(1.01);
-            background: #2d3748;
-            transition: all 0.2s ease-in-out;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
-            border-color: rgba(255, 255, 255, 0.2);
-        }
-        .content-item .tagline {
-            color: #9ca3af;
-            margin-bottom: 0.75rem;
-        }
-        .content-item .footer {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            font-size: 0.875rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            padding-top: 0.75rem;
-            margin-top: auto;
-        }
-        .content-item .footer-stat {
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-        }
-        .content-item .created-at {
-            margin-left: auto;
-            color: #6b7280;
-            font-size: 0.875rem;
-        }
-
-        /* Limit language button width */
-        #language-filter-button {
-            max-width: 280px; /* Adjust as needed */
+        .search-icon::before {
+            content: "⌕";
+            font-size: 22px;
+            line-height: 1;
         }
 
         #language-filter-button span {
+            min-width: 0;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-            /* Allow the span to take available space but not push the icon */
-            flex-grow: 1; 
-            /* Ensure it doesn't shrink below its content's natural min-width */
-            min-width: 0; 
         }
 
-        /* Add styles for repository description clamping */
-        .repo-description {
-            display: -webkit-box;
-            -webkit-line-clamp: 3; /* Limit to 3 lines */
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            /* Optional: Add a min-height to prevent collapsing if description is short */
-            min-height: calc(1.2em * 3); /* Adjust 1.2em based on line-height if needed */
+        .chevron {
+            width: 20px;
+            height: 20px;
+            flex: 0 0 auto;
+            color: #bae6fd;
+            transition: transform 160ms ease;
         }
-        
-        /* Avatar image styles */
-        .avatar-img {
-            width: 22px;
-            height: 22px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin-right: 8px;
-            flex-shrink: 0;
+
+        #language-filter-button[aria-expanded="true"] .chevron {
+            transform: rotate(180deg);
         }
-        
-        /* Header flex container styles */
-        .header {
+
+        .multiselect-container {
+            position: absolute;
+            top: calc(100% + 10px);
+            left: 0;
+            z-index: 1000;
+            width: min(340px, 88vw);
+            max-height: 360px;
+            overflow: auto;
+            padding: 8px;
+            border: 1px solid var(--line-strong);
+            border-radius: 18px;
+            background: rgba(8, 13, 26, 0.98);
+            box-shadow: 0 28px 70px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(18px);
+        }
+
+        .language-option {
             display: flex;
             align-items: center;
+            gap: 9px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            color: #dbeafe;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 140ms ease, color 140ms ease;
         }
 
-        .error-quote {
-            font-size: 16px;
+        .language-option:hover {
+            background: rgba(56, 189, 248, 0.11);
+            color: #ffffff;
+        }
+
+        .multiselect-container input {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--accent);
+        }
+
+        .main-content {
+            margin-top: 34px;
+        }
+
+        .content-batch + .content-batch {
+            margin-top: 44px;
+        }
+
+        .date-head {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            margin: 0 0 20px;
+            color: #bfdbfe;
+            font-size: 0.92rem;
+            font-weight: 900;
+            letter-spacing: 0.03em;
             text-align: center;
-            margin-top: 80px;
+        }
+
+        .date-head::before,
+        .date-head::after {
+            content: "";
+            height: 1px;
+            flex: 1;
+            background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.28));
+        }
+
+        .date-head::after {
+            background: linear-gradient(90deg, rgba(148, 163, 184, 0.28), transparent);
+        }
+
+        .date-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            max-width: 100%;
+            padding: 10px 16px;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.72);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.18);
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+            gap: 18px;
+        }
+
+        .repo-card {
+            position: relative;
+            display: flex;
+            min-height: 244px;
+            flex-direction: column;
+            overflow: hidden;
+            padding: 20px;
+            border: 1px solid var(--line);
+            border-radius: 24px;
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.025)),
+                rgba(15, 23, 42, 0.78);
+            box-shadow: 0 16px 46px rgba(0, 0, 0, 0.26);
+            isolation: isolate;
+            transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+        }
+
+        .repo-card::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            opacity: 0;
+            background:
+                radial-gradient(circle at top left, rgba(56, 189, 248, 0.18), transparent 38%),
+                radial-gradient(circle at bottom right, rgba(167, 139, 250, 0.16), transparent 42%);
+            transition: opacity 180ms ease;
+        }
+
+        .repo-card:hover {
+            transform: translateY(-6px);
+            border-color: rgba(125, 211, 252, 0.48);
+            background: rgba(15, 23, 42, 0.92);
+            box-shadow: 0 24px 70px rgba(0, 0, 0, 0.36), 0 0 0 1px rgba(56, 189, 248, 0.08);
+        }
+
+        .repo-card:hover::before {
+            opacity: 1;
+        }
+
+        .repo-card__top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .owner-pill {
+            display: inline-flex;
+            min-width: 0;
+            align-items: center;
+            gap: 9px;
+            padding: 6px 10px 6px 6px;
+            border: 1px solid rgba(148, 163, 184, 0.16);
+            border-radius: 999px;
+            background: rgba(2, 6, 23, 0.32);
+            color: #cbd5e1;
+            font-size: 0.8rem;
+            font-weight: 800;
+        }
+
+        .avatar-img {
+            width: 26px;
+            height: 26px;
+            flex: 0 0 auto;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .owner-pill span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .external-link {
+            display: grid;
+            width: 34px;
+            height: 34px;
+            flex: 0 0 auto;
+            place-items: center;
+            border: 1px solid rgba(148, 163, 184, 0.16);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.055);
+            color: #bae6fd;
+            font-weight: 900;
+        }
+
+        .repo-card__title {
+            margin: 0 0 10px;
+            overflow-wrap: anywhere;
+            color: #f8fafc;
+            font-size: 1.18rem;
+            font-weight: 900;
+            letter-spacing: -0.025em;
+            line-height: 1.22;
+        }
+
+        .repo-description {
+            display: -webkit-box;
+            min-height: 4.7em;
+            margin: 0 0 18px;
+            overflow: hidden;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 3;
+            color: #aebbd0;
+            font-size: 0.92rem;
+            line-height: 1.58;
+            text-overflow: ellipsis;
+        }
+
+        .repo-card__meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 9px;
+            margin-top: auto;
+            padding-top: 15px;
+            border-top: 1px solid rgba(148, 163, 184, 0.14);
+        }
+
+        .meta-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            min-height: 32px;
+            padding: 7px 10px;
+            border: 1px solid rgba(148, 163, 184, 0.14);
+            border-radius: 999px;
+            background: rgba(2, 6, 23, 0.28);
+            color: #cbd5e1;
+            font-size: 0.8rem;
+            font-weight: 850;
+        }
+
+        .meta-pill--stars {
+            color: #fde68a;
+        }
+
+        .language-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 999px;
+            background: var(--language-color, #94a3b8);
+            box-shadow: 0 0 18px var(--language-color, #94a3b8);
+        }
+
+        .no-results,
+        .error-quote {
+            margin: 46px auto 0;
+            max-width: 620px;
+            padding: 28px;
+            border: 1px solid var(--line);
+            border-radius: 24px;
+            background: rgba(15, 23, 42, 0.74);
+            box-shadow: var(--shadow);
+            color: #cbd5e1;
+            text-align: center;
+        }
+
+        .no-results {
+            grid-column: 1 / -1;
+        }
+
+        .no-results strong,
+        .error-quote strong {
+            display: block;
+            margin-bottom: 8px;
+            color: #ffffff;
+            font-size: 1.2rem;
+        }
+
+        .loading-more {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin: 42px auto 0;
+            color: #bae6fd;
+            font-weight: 900;
+        }
+
+        .spinner {
+            width: 34px;
+            height: 34px;
+            border: 3px solid rgba(125, 211, 252, 0.16);
+            border-top-color: var(--accent);
+            border-radius: 999px;
+            animation: spin 800ms linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media (max-width: 980px) {
+            .site-header {
+                grid-template-columns: 1fr;
+                align-items: stretch;
+            }
+
+            .control-panel {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .page-shell {
+                width: min(100% - 20px, 1440px);
+                padding-top: 10px;
+            }
+
+            .site-header {
+                border-radius: 20px;
+                padding: 14px;
+            }
+
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .date-head::before,
+            .date-head::after {
+                display: none;
+            }
         }
     </style>
 </head>
 
-<body class="bg-gray-800 text-gray-300">
-    <div class="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
+<body>
+    <div class="page-shell">
         <header class="site-header">
-            <div class="site-branding">
+            <div class="title-section">
                 <h1 class="site-title">Git Miner</h1>
-                <p class="site-description">Mining the best action on Github</p>
+                <p class="site-description">Trending GitHub repositories.</p>
             </div>
-            
-            <div class="filter-group">
+
+            <div class="control-panel" aria-label="Repository filters">
                 <div class="filter-item">
-                    <select id="date-jump" class="filter-button">
+                    <label class="filter-label" for="date-jump">Time window</label>
+                    <select id="date-jump">
                         <option value="day">Daily</option>
                         <option value="week">Weekly</option>
                         <option value="biweek">Bi-Weekly</option>
@@ -251,9 +581,10 @@
                 </div>
 
                 <div class="filter-item">
-                    <button type="button" class="filter-button flex items-center justify-between" id="language-filter-button">
+                    <span class="filter-label" id="language-filter-label">Languages</span>
+                    <button type="button" class="filter-button" id="language-filter-button" aria-labelledby="language-filter-label" aria-expanded="false">
                         <span>All Languages</span>
-                        <svg class="w-5 h-5 ml-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <svg class="chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                             <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
                         </svg>
                     </button>
@@ -263,18 +594,20 @@
                 </div>
 
                 <div class="filter-item search-container">
-                    <i class="fa fa-search search-icon"></i>
-                    <input id="search-query" type="text" class="search-input" placeholder="Search repositories..." />
+                    <label class="filter-label" for="search-query">Search</label>
+                    <i class="search-icon" aria-hidden="true"></i>
+                    <input id="search-query" type="text" class="search-input" placeholder="Try ai agents, database, rust..." autocomplete="off" />
                 </div>
             </div>
         </header>
 
-        <main class="main-content">
+        <main class="main-content" aria-live="polite">
             <!-- Repositories will be added here -->
         </main>
 
-        <div class="loading-more hidden text-center my-12">
-            <img src="assets/img/loading.gif" width="60" alt="Loading..." class="inline-block" style="filter: invert(90%);">
+        <div class="loading-more hidden">
+            <div class="spinner" aria-hidden="true"></div>
+            <span>Mining repositories…</span>
         </div>
     </div>
 

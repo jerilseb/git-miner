@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
   const reposApiUrl = "https://api.github.com/search/repositories";
-  const miningResultKey = "last_mining_result";
-  const miningTimeKey = "last_mining_time";
+  const miningResultKey = "last_mining_result_v2";
+  const miningTimeKey = "last_mining_time_v2";
   const refreshDuration = 180; //minutes
   let requestCount = 0;
   let trendingRequest = false;
@@ -22,10 +22,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     languageOptions.forEach(language => {
       const listItem = document.createElement('li');
-      const link = document.createElement('a');
-      link.href = "#";
       const label = document.createElement('label');
-      label.classList.add('checkbox');
+      label.classList.add('checkbox', 'language-option');
       const input = document.createElement('input');
       input.type = 'checkbox';
       input.value = language;
@@ -48,20 +46,21 @@ document.addEventListener('DOMContentLoaded', () => {
       })
       label.appendChild(input);
       label.appendChild(document.createTextNode(" " + language));
-      link.appendChild(label);
-      listItem.appendChild(link);
+      listItem.appendChild(label);
       languageFilterDropdown.appendChild(listItem);
     });
 
     // Toggle dropdown visibility
     languageFilterButton.addEventListener('click', () => {
-      languageFilterDropdown.classList.toggle('hidden');
+      const isHidden = languageFilterDropdown.classList.toggle('hidden');
+      languageFilterButton.setAttribute('aria-expanded', String(!isHidden));
     });
 
     // Close dropdown when clicking outside
     document.addEventListener('click', (event) => {
       if (!languageFilterButton.contains(event.target) && !languageFilterDropdown.contains(event.target)) {
         languageFilterDropdown.classList.add('hidden');
+        languageFilterButton.setAttribute('aria-expanded', 'false');
       }
     });
   }
@@ -130,42 +129,108 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
 
+  function escapeHtml(value) {
+    const div = document.createElement("div");
+    div.textContent = value ?? "";
+    return div.innerHTML;
+  }
+
+  function compactNumber(value) {
+    return Intl.NumberFormat("en", {
+      notation: "compact",
+      maximumFractionDigits: 1,
+    }).format(value || 0);
+  }
+
+  function languageColor(language) {
+    const colors = {
+      "C": "#555555",
+      "C#": "#178600",
+      "C++": "#f34b7d",
+      "Clojure": "#db5855",
+      "CSS": "#563d7c",
+      "Erlang": "#b83998",
+      "Elixir": "#6e4a7e",
+      "Elm": "#60b5cc",
+      "Go": "#00add8",
+      "HTML": "#e34c26",
+      "Haskell": "#5e5086",
+      "Java": "#b07219",
+      "JavaScript": "#f1e05a",
+      "Jupyter Notebook": "#da5b0b",
+      "Kotlin": "#a97bff",
+      "Lua": "#000080",
+      "Python": "#3572a5",
+      "PHP": "#4f5d95",
+      "Ruby": "#701516",
+      "Rust": "#dea584",
+      "R": "#198ce7",
+      "Scala": "#c22d40",
+      "Swift": "#f05138",
+      "TypeScript": "#3178c6",
+    };
+
+    return colors[language] || "#94a3b8";
+  }
+
   async function generateReposHtml(repositories, lowerDate, upperDate) {
+    const visibleRepositories = repositories.slice(0, perPage);
     let html = "";
 
-    repositories = repositories.slice(0, perPage);
+    if (visibleRepositories.length === 0) {
+      html = `
+        <div class="no-results">
+          <strong>No repositories found</strong>
+          Try widening the time range, clearing the search query, or choosing fewer languages.
+        </div>
+      `;
+    }
 
-    repositories.forEach(repository => {
-      const repFullName = document.createElement("div").textContent = repository.name;
-      let repFullDesc = repository.description ? (document.createElement("div").textContent = repository.description) : "<i>No description or website provided</i>";
+    visibleRepositories.forEach(repository => {
+      const repoName = escapeHtml(repository.name);
+      const ownerName = escapeHtml(repository.owner.login);
+      const description = repository.description ? escapeHtml(repository.description) : "No description provided yet.";
+      const language = repository.language || "Unknown";
+      const safeLanguage = escapeHtml(language);
       const createdAt = timeAgo(repository.created_at);
+      const repoUrl = escapeHtml(repository.html_url);
+      const avatarUrl = escapeHtml(repository.owner.avatar_url);
+      const avatarAlt = escapeHtml(`${repository.owner.login} avatar`);
 
       html += `
-                  <a href="${repository.html_url}" class="content-item block transition duration-150 ease-in-out">
-                      <div class="header text-lg font-bold text-blue-400 truncate flex items-center">
-                          <img src="${repository.owner.avatar_url}" alt="${repository.owner.login}" class="avatar-img mr-2" width="20" height="20">
-                          ${repFullName}
-                      </div>
-                      <p class="tagline text-sm mt-1 repo-description">${repFullDesc}</p>
-                      <div class="footer">
-                          <span class="footer-stat text-yellow-400"><i class="fa fa-star-o"></i> ${repository.stargazers_count}</span>
-                          <span class="footer-stat text-purple-400"><i class="fa fa-code"></i> ${repository.language || 'Unknown'}</span>
-                          <span class="created-at"><i class="fa fa-clock-o"></i> ${createdAt}</span>
-                      </div>
-                  </a>
-              `;
+        <a href="${repoUrl}" class="repo-card content-item" target="_blank" rel="noopener noreferrer">
+          <div class="repo-card__top">
+            <div class="owner-pill" title="${ownerName}">
+              <img src="${avatarUrl}" alt="${avatarAlt}" class="avatar-img" width="26" height="26">
+              <span>${ownerName}</span>
+            </div>
+            <span class="external-link" aria-hidden="true">↗</span>
+          </div>
+
+          <h2 class="repo-card__title">${repoName}</h2>
+          <p class="repo-description">${description}</p>
+
+          <div class="repo-card__meta">
+            <span class="meta-pill meta-pill--stars">★ ${compactNumber(repository.stargazers_count)}</span>
+            <span class="meta-pill"><span class="language-dot" style="--language-color: ${languageColor(language)}"></span>${safeLanguage}</span>
+            <span class="meta-pill">◷ ${createdAt}</span>
+          </div>
+        </a>
+      `;
     });
 
     const humanDate = timeAgo(lowerDate);
 
     const finalHtml = `
-              <div class="content-batch">
-                  <h1 class="date-head text-lg text-center my-5" data-date="${lowerDate}">From ${humanDate} - ${formatDate(lowerDate)} – ${formatDate(upperDate)}</h1>
-                  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                      ${html}
-                  </div>
-              </div>
-          `;
+      <div class="content-batch">
+        <h1 class="date-head" data-date="${lowerDate}">
+          <span class="date-pill">From ${humanDate} · ${formatDate(lowerDate)} – ${formatDate(upperDate)}</span>
+        </h1>
+        <div class="content-grid">
+          ${html}
+        </div>
+      </div>
+    `;
 
     return finalHtml;
   }
@@ -369,10 +434,10 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error("Fetch Error:", error.message);
       let errorMessage = error.message;
 
-      let errorContent = '<h4 class="quote-item error-quote">Oops! Failed to fetch</h4>';
+      let errorContent = '<div class="quote-item error-quote"><strong>Oops! Failed to fetch</strong>GitHub did not return repository results. Please try again in a moment.</div>';
 
       if (errorMessage.includes("rate limit")) {
-        errorContent = '<div class="quote-item error-quote">Oops! Github rate limit exceeded. Wait another hour for github to refresh your rate limit.</div>';
+        errorContent = '<div class="quote-item error-quote"><strong>GitHub rate limit exceeded</strong>Wait another hour for GitHub to refresh your rate limit.</div>';
       }
       document.querySelector(".main-content").innerHTML = errorContent;
 
@@ -403,13 +468,20 @@ document.addEventListener('DOMContentLoaded', () => {
       await handleFilterChange()
     });
 
-    document.getElementById("search-query").addEventListener("change", async () => await handleFilterChange());
+    let searchDebounce;
+    document.getElementById("search-query").addEventListener("input", () => {
+      clearTimeout(searchDebounce);
+      searchDebounce = setTimeout(() => handleFilterChange(), 450);
+    });
 
     if (document.getElementById("per-page")) {
       document.getElementById("per-page").addEventListener("change", async () => {
         perPage = document.getElementById("per-page").value; // Update perPage
         await setOptionsToStorage({ "per-page": perPage });
-        document.querySelector(".quote-item").textContent = "Changes will take effect from the next fetch";
+        const notice = document.querySelector(".quote-item");
+        if (notice) {
+          notice.textContent = "Changes will take effect from the next fetch";
+        }
       });
     }
   }
