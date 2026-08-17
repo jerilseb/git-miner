@@ -17,7 +17,7 @@ applyTheme(localStorage.getItem(themeKey) || systemTheme());
 
 const railWidthKey = "rail_width";
 const railWidthDefault = 440;
-const railWidthMin = 260;
+const railWidthMin = 340;
 const railWidthMax = 900;
 
 function clampRailWidth(width, max = railWidthMax) {

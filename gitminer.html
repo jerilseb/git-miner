@@ -512,10 +512,13 @@
         }
 
         /* auto-fill rather than a fixed count: the column count then follows the
-           grid's own width, so dragging the divider reflows it like a resize. */
+           grid's own width, so dragging the divider reflows it like a resize.
+           The track minimum never drops below a third of the grid, which caps
+           the layout at 3 columns however wide it gets; the 1px keeps the
+           division just under an exact third so it can't round down to 2. */
         .content-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(max(240px, calc((100% - 24px) / 3 - 1px)), 1fr));
             gap: 12px;
         }
 
