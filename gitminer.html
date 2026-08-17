@@ -6,44 +6,45 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Git Miner</title>
 
+    <!-- Loaded in <head> on purpose: the top of app.js applies the saved
+         theme before the body is parsed. The rest of it waits for
+         DOMContentLoaded, so nothing here touches the body early. -->
+    <script src="assets/js/app.js"></script>
+
     <style>
         /* ---------------------------------------------------------------
            Tokens
            --------------------------------------------------------------- */
+        /* Every colour is light-dark(light, dark) and resolves against the
+           used color-scheme below, so the palette is defined exactly once. */
         :root {
             color-scheme: light dark;
 
             --radius: 2px;
 
-            --bg: #f7f7f8;
-            --surface: #ffffff;
-            --surface-sunken: #f2f2f4;
-            --border: #e3e3e7;
-            --border-strong: #c9c9cf;
-            --text: #17171a;
-            --text-soft: #52525b;
-            --muted: #78787f;
-            --accent: #1f5fd8;
-            --accent-soft: #e8effc;
-            --star: #a05a00;
-            --danger: #b42318;
+            --bg: light-dark(#f7f7f8, #0d0d10);
+            --surface: light-dark(#ffffff, #141417);
+            --surface-sunken: light-dark(#f2f2f4, #1a1a1e);
+            --border: light-dark(#e3e3e7, #26262b);
+            --border-strong: light-dark(#c9c9cf, #3d3d45);
+            --text: light-dark(#17171a, #ececf0);
+            --text-soft: light-dark(#52525b, #b4b4bd);
+            --muted: light-dark(#78787f, #85858f);
+            --accent: light-dark(#1f5fd8, #6d9eff);
+            --accent-soft: light-dark(#e8effc, #17233c);
+            --star: light-dark(#a05a00, #d9a13b);
+            --danger: light-dark(#b42318, #f97066);
         }
 
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --bg: #0d0d10;
-                --surface: #141417;
-                --surface-sunken: #1a1a1e;
-                --border: #26262b;
-                --border-strong: #3d3d45;
-                --text: #ececf0;
-                --text-soft: #b4b4bd;
-                --muted: #85858f;
-                --accent: #6d9eff;
-                --accent-soft: #17233c;
-                --star: #d9a13b;
-                --danger: #f97066;
-            }
+        /* data-theme is set on <html> before the body is painted; it pins the
+           scheme, which also themes native widgets and scrollbars. The bare
+           :root above only applies until then, so it follows the OS. */
+        :root[data-theme="light"] {
+            color-scheme: light;
+        }
+
+        :root[data-theme="dark"] {
+            color-scheme: dark;
         }
 
         /* ---------------------------------------------------------------
@@ -310,6 +311,50 @@
         .search-icon svg {
             width: 14px;
             height: 14px;
+        }
+
+        /* ---------------------------------------------------------------
+           Theme toggle
+           --------------------------------------------------------------- */
+        .theme-toggle {
+            display: grid;
+            place-items: center;
+            width: 34px;
+            height: 34px;
+            flex: 0 0 auto;
+            padding: 0;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            outline: none;
+            background: var(--surface);
+            color: var(--text-soft);
+            cursor: pointer;
+            transition: border-color 120ms linear, color 120ms linear;
+        }
+
+        .theme-toggle:hover {
+            border-color: var(--border-strong);
+            color: var(--text);
+        }
+
+        .theme-toggle:focus-visible {
+            border-color: var(--accent);
+        }
+
+        .theme-toggle svg {
+            width: 15px;
+            height: 15px;
+        }
+
+        /* The active icon is chosen in CSS so it is already correct on the
+           first paint, before any script has run. */
+        .theme-icon {
+            display: none;
+        }
+
+        :root[data-theme="light"] .theme-icon--light,
+        :root[data-theme="dark"] .theme-icon--dark {
+            display: block;
         }
 
         /* ---------------------------------------------------------------
@@ -745,6 +790,16 @@
                         </svg>
                     </button>
                 </div>
+
+                <button type="button" class="theme-toggle" id="theme-toggle">
+                    <svg class="theme-icon theme-icon--light" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" aria-hidden="true">
+                        <circle cx="8" cy="8" r="3.25" />
+                        <path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3.05 3.05l1.06 1.06M11.89 11.89l1.06 1.06M12.95 3.05l-1.06 1.06M4.11 11.89l-1.06 1.06" />
+                    </svg>
+                    <svg class="theme-icon theme-icon--dark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M13.5 9.7A5.9 5.9 0 0 1 6.3 2.5a5.9 5.9 0 1 0 7.2 7.2z" />
+                    </svg>
+                </button>
             </div>
         </div>
     </header>
@@ -759,8 +814,6 @@
             <span>Mining repositories</span>
         </div>
     </div>
-
-    <script src="assets/js/app.js"></script>
 </body>
 
 </html>

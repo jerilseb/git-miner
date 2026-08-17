@@ -1,3 +1,20 @@
+const themeKey = "theme_preference";
+const systemThemeQuery = matchMedia("(prefers-color-scheme: dark)");
+
+function systemTheme() {
+  return systemThemeQuery.matches ? "dark" : "light";
+}
+
+// Runs at parse time rather than on DOMContentLoaded so the theme is on <html>
+// before the body is painted, which is also why the choice lives in
+// localStorage: chrome.storage is async and would flash the wrong theme.
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme === "dark" ? "dark" : "light";
+}
+
+// Nothing stored means "follow the OS", so the OS is read but not persisted.
+applyTheme(localStorage.getItem(themeKey) || systemTheme());
+
 document.addEventListener('DOMContentLoaded', () => {
   const reposApiUrl = "https://api.github.com/search/repositories";
   const miningResultKey = "last_mining_result_v2";
@@ -5,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const refreshDuration = 180; //minutes
   let requestCount = 0;
   let trendingRequest = false;
-  let perPage = 30;
+  const perPage = 30;
 
   // Language filter elements
   const languageFilterButton = document.getElementById('language-filter-button');
@@ -23,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
     languageOptions.forEach(language => {
       const listItem = document.createElement('li');
       const label = document.createElement('label');
-      label.classList.add('checkbox', 'language-option');
+      label.classList.add('language-option');
       const input = document.createElement('input');
       input.type = 'checkbox';
       input.value = language;
@@ -69,7 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
   async function getOptionsFromStorage() {
     return new Promise((resolve) => {
       chrome.storage.sync.get(
-        ["per-page", "selectedLanguages", "dateJump"],
+        ["selectedLanguages", "dateJump"],
         (result) => {
           resolve(result);
         }
@@ -86,32 +103,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Generic function to populate filter selections
-  async function populateFilter(filterId, selectedValue) {
-    const element = document.getElementById(filterId);
-    if (element) {
-      if (element.tagName === "SELECT") {
-        Array.from(element.options).forEach((option) => {
-          if (option.value === selectedValue) {
-            option.selected = true;
-          }
-        });
-      } else if (element.type === "text") {
-        element.value = selectedValue;
-      }
-    }
-  }
-
   // Populate saved filters
   async function populateFilters() {
     const options = await getOptionsFromStorage();
     // Check if options exist, otherwise set defaults
-    perPage = options["per-page"] || '30';
-    const savedDateJump = options.dateJump || 'day';
     selectedLanguages = options.selectedLanguages || [];
 
-    await populateFilter("per-page", perPage);
-    await populateFilter("date-jump", savedDateJump);
+    document.getElementById("date-jump").value = options.dateJump || 'day';
 
     // Set selected languages from storage
     document.querySelectorAll('#language-filter-dropdown input[type="checkbox"]').forEach(checkbox => {
@@ -198,7 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const avatarAlt = escapeHtml(`${repository.owner.login} avatar`);
 
       html += `
-        <a href="${repoUrl}" class="repo-card content-item" target="_blank" rel="noopener noreferrer">
+        <a href="${repoUrl}" class="repo-card" target="_blank" rel="noopener noreferrer">
           <div class="repo-card__top">
             <div class="owner-pill" title="${ownerName}">
               <img src="${avatarUrl}" alt="${avatarAlt}" class="avatar-img" width="26" height="26">
@@ -501,28 +499,45 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     syncSearchClear();
+    bindThemeToggle();
+  }
 
-    if (document.getElementById("per-page")) {
-      document.getElementById("per-page").addEventListener("change", async () => {
-        perPage = document.getElementById("per-page").value; // Update perPage
-        await setOptionsToStorage({ "per-page": perPage });
-        const notice = document.querySelector(".quote-item");
-        if (notice) {
-          notice.textContent = "Changes will take effect from the next fetch";
-        }
-      });
+  function bindThemeToggle() {
+    const themeToggle = document.getElementById("theme-toggle");
+
+    function syncThemeToggle() {
+      const title = document.documentElement.dataset.theme === "dark"
+        ? "Dark theme — switch to light"
+        : "Light theme — switch to dark";
+
+      themeToggle.title = title;
+      themeToggle.setAttribute("aria-label", title);
     }
+
+    themeToggle.addEventListener("click", () => {
+      const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+
+      applyTheme(next);
+      localStorage.setItem(themeKey, next);
+      syncThemeToggle();
+    });
+
+    // Keep following the OS until the toggle has been used at least once.
+    systemThemeQuery.addEventListener("change", () => {
+      if (!localStorage.getItem(themeKey)) {
+        applyTheme(systemTheme());
+        syncThemeToggle();
+      }
+    });
+
+    syncThemeToggle();
   }
 
   async function init() {
     bindUI();
     createLanguageFilter();
     await populateFilters();
-
-    if (location.pathname.includes("gitminer.html")) {
-      await fetchTrendingRepos();
-    }
-
+    await fetchTrendingRepos();
   }
 
   init(); // Call the init function to start everything
