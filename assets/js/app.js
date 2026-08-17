@@ -468,11 +468,39 @@ document.addEventListener('DOMContentLoaded', () => {
       await handleFilterChange()
     });
 
+    const searchInput = document.getElementById("search-query");
+    const searchClear = document.getElementById("search-clear");
     let searchDebounce;
-    document.getElementById("search-query").addEventListener("input", () => {
+
+    function syncSearchClear() {
+      searchClear.classList.toggle("hidden", searchInput.value === "");
+    }
+
+    searchInput.addEventListener("input", () => {
+      syncSearchClear();
       clearTimeout(searchDebounce);
       searchDebounce = setTimeout(() => handleFilterChange(), 450);
     });
+
+    // Escape clears the query without waiting for the debounce
+    searchInput.addEventListener("keydown", async (event) => {
+      if (event.key === "Escape" && searchInput.value !== "") {
+        event.preventDefault();
+        await clearSearch();
+      }
+    });
+
+    searchClear.addEventListener("click", clearSearch);
+
+    async function clearSearch() {
+      clearTimeout(searchDebounce);
+      searchInput.value = "";
+      syncSearchClear();
+      searchInput.focus();
+      await handleFilterChange();
+    }
+
+    syncSearchClear();
 
     if (document.getElementById("per-page")) {
       document.getElementById("per-page").addEventListener("change", async () => {
