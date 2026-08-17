@@ -15,14 +15,42 @@ function applyTheme(theme) {
 // Nothing stored means "follow the OS", so the OS is read but not persisted.
 applyTheme(localStorage.getItem(themeKey) || systemTheme());
 
+const railWidthKey = "rail_width";
+const railWidthDefault = 440;
+const railWidthMin = 260;
+const railWidthMax = 900;
+
+function clampRailWidth(width, max = railWidthMax) {
+  return Math.min(Math.max(width, railWidthMin), max);
+}
+
+// One variable on <html> drives every batch's column split, so a single drag
+// resizes all the date windows at once.
+function applyRailWidth(width) {
+  document.documentElement.style.setProperty("--rail-width", `${Math.round(width)}px`);
+}
+
+// Applied at parse time, like the theme, so a batch restored from cache doesn't
+// paint at the default width and then jump.
+const storedRailWidth = Number(localStorage.getItem(railWidthKey));
+if (storedRailWidth > 0) {
+  applyRailWidth(clampRailWidth(storedRailWidth));
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const reposApiUrl = "https://api.github.com/search/repositories";
-  const miningResultKey = "last_mining_result_v2";
-  const miningTimeKey = "last_mining_time_v2";
+  // Algolia rather than the official Firebase API: one request per window
+  // instead of one per story, and it sorts by points for a date range.
+  const hnApiUrl = "https://hn.algolia.com/api/v1/search";
+  // _v3: the cache holds rendered HTML, so the key has to change whenever the
+  // markup does or existing users keep seeing the old layout for up to 3h.
+  const miningResultKey = "last_mining_result_v3";
+  const miningTimeKey = "last_mining_time_v3";
   const refreshDuration = 180; //minutes
   let requestCount = 0;
   let trendingRequest = false;
   const perPage = 30;
+  const hnPerPage = 30;
 
   // Language filter elements
   const languageFilterButton = document.getElementById('language-filter-button');
@@ -171,66 +199,141 @@ document.addEventListener('DOMContentLoaded', () => {
     return colors[language] || "#94a3b8";
   }
 
-  async function generateReposHtml(repositories, lowerDate, upperDate) {
-    const visibleRepositories = repositories.slice(0, perPage);
-    let html = "";
+  function repoCardHtml(repository) {
+    const repoName = escapeHtml(repository.name);
+    const ownerName = escapeHtml(repository.owner.login);
+    const description = repository.description ? escapeHtml(repository.description) : "No description provided yet.";
+    const language = repository.language || "Unknown";
+    const safeLanguage = escapeHtml(language);
+    const createdAt = timeAgo(repository.created_at);
+    const repoUrl = escapeHtml(repository.html_url);
+    const avatarUrl = escapeHtml(repository.owner.avatar_url);
+    const avatarAlt = escapeHtml(`${repository.owner.login} avatar`);
 
-    if (visibleRepositories.length === 0) {
-      html = `
+    return `
+      <a href="${repoUrl}" class="repo-card" target="_blank" rel="noopener noreferrer">
+        <div class="repo-card__top">
+          <div class="owner-pill" title="${ownerName}">
+            <img src="${avatarUrl}" alt="${avatarAlt}" class="avatar-img" width="26" height="26">
+            <span>${ownerName}</span>
+          </div>
+          <span class="external-link" aria-hidden="true">↗</span>
+        </div>
+
+        <h2 class="repo-card__title">${repoName}</h2>
+        <p class="repo-description">${description}</p>
+
+        <div class="repo-card__meta">
+          <span class="meta-pill meta-pill--stars">★ ${compactNumber(repository.stargazers_count)}</span>
+          <span class="meta-pill"><span class="language-dot" style="--language-color: ${languageColor(language)}"></span>${safeLanguage}</span>
+          <span class="meta-pill">◷ ${createdAt}</span>
+        </div>
+      </a>
+    `;
+  }
+
+  function storyDomain(url) {
+    try {
+      return new URL(url).hostname.replace(/^www\./, "");
+    } catch (error) {
+      return "";
+    }
+  }
+
+  function hnItemHtml(story) {
+    const threadUrl = `https://news.ycombinator.com/item?id=${encodeURIComponent(story.objectID)}`;
+    // Ask HN / Show HN text posts have no url at all, so fall back to the thread.
+    const title = escapeHtml(story.title || "Untitled");
+    const titleUrl = escapeHtml(story.url || threadUrl);
+    const domain = escapeHtml(storyDomain(story.url));
+    const comments = compactNumber(story.num_comments);
+
+    return `
+      <li class="hn-item">
+        <a href="${titleUrl}" class="hn-item__title" target="_blank" rel="noopener noreferrer">${title}</a>
+        <div class="hn-item__meta">
+          <span class="hn-points">▲ ${compactNumber(story.points)}</span>
+          ${domain ? `<span class="hn-domain" title="${domain}">${domain}</span>` : ""}
+          <a href="${escapeHtml(threadUrl)}" class="hn-comments" target="_blank" rel="noopener noreferrer">${comments} comments</a>
+          <span class="hn-time">◷ ${timeAgo(story.created_at)}</span>
+        </div>
+      </li>
+    `;
+  }
+
+  // The .error-quote class also latches further fetching, which is what stops
+  // infinite scroll from hammering a rate-limited API.
+  function repoErrorHtml(error) {
+    if (error.message.includes("rate limit")) {
+      return `
+        <div class="quote-item error-quote">
+          <strong>GitHub rate limit exceeded</strong>
+          Wait another hour for GitHub to refresh your rate limit.
+        </div>
+      `;
+    }
+
+    return `
+      <div class="quote-item error-quote">
+        <strong>Oops! Failed to fetch</strong>
+        GitHub did not return repository results. Please try again in a moment.
+      </div>
+    `;
+  }
+
+  // repositories === null means the GitHub request failed (see repoError).
+  function generateBatchHtml({ repositories, repoError, stories, hnError, lowerDate, upperDate }) {
+    let reposHtml;
+
+    if (repositories === null) {
+      reposHtml = repoErrorHtml(repoError);
+    } else if (repositories.length === 0) {
+      reposHtml = `
         <div class="no-results">
           <strong>No repositories found</strong>
           Try widening the time range, clearing the search query, or choosing fewer languages.
         </div>
       `;
+    } else {
+      reposHtml = repositories.slice(0, perPage).map(repoCardHtml).join("");
     }
 
-    visibleRepositories.forEach(repository => {
-      const repoName = escapeHtml(repository.name);
-      const ownerName = escapeHtml(repository.owner.login);
-      const description = repository.description ? escapeHtml(repository.description) : "No description provided yet.";
-      const language = repository.language || "Unknown";
-      const safeLanguage = escapeHtml(language);
-      const createdAt = timeAgo(repository.created_at);
-      const repoUrl = escapeHtml(repository.html_url);
-      const avatarUrl = escapeHtml(repository.owner.avatar_url);
-      const avatarAlt = escapeHtml(`${repository.owner.login} avatar`);
+    let railBody;
 
-      html += `
-        <a href="${repoUrl}" class="repo-card" target="_blank" rel="noopener noreferrer">
-          <div class="repo-card__top">
-            <div class="owner-pill" title="${ownerName}">
-              <img src="${avatarUrl}" alt="${avatarAlt}" class="avatar-img" width="26" height="26">
-              <span>${ownerName}</span>
-            </div>
-            <span class="external-link" aria-hidden="true">↗</span>
-          </div>
+    if (hnError) {
+      // Deliberately not .error-quote: that would latch the scroll loop.
+      railBody = `<p class="rail-note">Couldn't reach Hacker News.</p>`;
+    } else if (stories.length === 0) {
+      railBody = `<p class="rail-note">No stories in this window.</p>`;
+    } else {
+      railBody = `<ol class="hn-list">${stories.map(hnItemHtml).join("")}</ol>`;
+    }
 
-          <h2 class="repo-card__title">${repoName}</h2>
-          <p class="repo-description">${description}</p>
-
-          <div class="repo-card__meta">
-            <span class="meta-pill meta-pill--stars">★ ${compactNumber(repository.stargazers_count)}</span>
-            <span class="meta-pill"><span class="language-dot" style="--language-color: ${languageColor(language)}"></span>${safeLanguage}</span>
-            <span class="meta-pill">◷ ${createdAt}</span>
-          </div>
-        </a>
-      `;
-    });
+    const railHtml = `
+      <aside class="hn-rail">
+        <h2 class="rail-head">Hacker News</h2>
+        ${railBody}
+      </aside>
+    `;
 
     const humanDate = timeAgo(lowerDate);
 
-    const finalHtml = `
+    return `
       <div class="content-batch">
         <h1 class="date-head" data-date="${lowerDate}">
           <span class="date-pill">From ${humanDate} · ${formatDate(lowerDate)} – ${formatDate(upperDate)}</span>
         </h1>
-        <div class="content-grid">
-          ${html}
+        <div class="batch-body">
+          <div class="content-grid">
+            ${reposHtml}
+          </div>
+          <div class="batch-resizer" role="separator" aria-orientation="vertical" tabindex="0"
+            aria-label="Resize the Hacker News column"
+            title="Drag to resize · double-click to reset"></div>
+          ${railHtml}
         </div>
       </div>
     `;
-
-    return finalHtml;
   }
 
   function formatDate(dateString) {
@@ -320,8 +423,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
 
-  async function getApiFilters() {
-    const dateRange = await getNextDateRange();
+  function reposRequestUrl(dateRange) {
     const searchQuery = document.getElementById("search-query").value;
     let langCondition = searchQuery ? searchQuery + "+" : "";
 
@@ -330,12 +432,62 @@ document.addEventListener('DOMContentLoaded', () => {
       langCondition += `language:"${language}"+`;
     });
 
-    let apiToken = "";
+    return `${reposApiUrl}?sort=stars&order=desc&q=${langCondition}created:${dateRange.lower}..${dateRange.upper}`;
+  }
 
-    return {
-      queryParams: `?sort=stars&order=desc&q=${langCondition}created:${dateRange.lower}..${dateRange.upper}${apiToken}`,
-      dateRange: dateRange,
-    };
+  function hnRequestUrl(dateRange) {
+    // GitHub's created:A..B spans both whole days, so match that. URLSearchParams
+    // percent-encodes the > and < in numericFilters, which Algolia requires.
+    const lower = Math.floor(new Date(`${dateRange.lower}T00:00:00Z`).getTime() / 1000);
+    const upper = Math.floor(new Date(`${dateRange.upper}T23:59:59Z`).getTime() / 1000);
+
+    const params = new URLSearchParams({
+      tags: "story",
+      numericFilters: `created_at_i>${lower},created_at_i<${upper}`,
+      hitsPerPage: String(hnPerPage),
+      query: document.getElementById("search-query").value.trim(),
+    });
+
+    return `${hnApiUrl}?${params}`;
+  }
+
+  async function describeResponseError(response) {
+    const errorText = await response.text();
+    let errorMessage = `Network response was not ok. Status: ${response.status} ${response.statusText}`;
+
+    try {
+      const errorJson = JSON.parse(errorText);
+      errorMessage += `\nMessage: ${errorJson.message}`;
+      if (errorJson.errors && Array.isArray(errorJson.errors)) {
+        errorJson.errors.forEach(err => {
+          errorMessage += `\n- ${err.message || err.code}`;
+        });
+      }
+    } catch (parseError) {
+      errorMessage += `\nRaw error text: ${errorText}`
+    }
+
+    return errorMessage;
+  }
+
+  async function fetchRepos(dateRange) {
+    const response = await fetch(reposRequestUrl(dateRange));
+    if (!response.ok) {
+      throw new Error(await describeResponseError(response));
+    }
+
+    const data = await response.json();
+    return data.items || [];
+  }
+
+  async function fetchHnStories(dateRange) {
+    const response = await fetch(hnRequestUrl(dateRange));
+    if (!response.ok) {
+      throw new Error(await describeResponseError(response));
+    }
+
+    const data = await response.json();
+    return data.hits || [];
   }
 
 
@@ -381,7 +533,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
 
-  async function fetchTrendingRepos() {
+  async function fetchNextBatch() {
     if (trendingRequest !== false || document.querySelector(".error-quote")) {
       return false;
     }
@@ -390,72 +542,59 @@ document.addEventListener('DOMContentLoaded', () => {
       return false;
     }
 
-    const filters = await getApiFilters();
-    const url = reposApiUrl + filters.queryParams;
+    // Read the scroll cursor once so both sources cover the same window.
+    const dateRange = await getNextDateRange();
 
     trendingRequest = true;
     document.querySelector(".loading-more").classList.remove("hidden");
 
-    try {
-      const response = await fetch(url);
-      if (!response.ok) {
+    // Languages narrow the repo query only; the rail always shows the window's
+    // top stories. The search box, unlike languages, does apply to both.
+    const [repoResult, hnResult] = await Promise.allSettled([
+      fetchRepos(dateRange),
+      fetchHnStories(dateRange),
+    ]);
 
-        const errorText = await response.text();
-        let errorMessage = `Network response was not ok. Status: ${response.status} ${response.statusText}`;
-        try {
-          const errorJson = JSON.parse(errorText);
-          errorMessage += `\nMessage: ${errorJson.message}`;
-          if (errorJson.errors && Array.isArray(errorJson.errors)) {
-            errorJson.errors.forEach(err => {
-              errorMessage += `\n- ${err.message || err.code}`;
-            });
-          }
-
-        } catch (parseError) {
-          errorMessage += `\nRaw error text: ${errorText}`
-        }
-
-        throw new Error(errorMessage);
-
-      }
-      const data = await response.json();
-      const finalHtml = await generateReposHtml(
-        data.items,
-        filters.dateRange.lower,
-        filters.dateRange.upper
-      );
-      document.querySelector(".main-content").insertAdjacentHTML("beforeend", finalHtml);
-      trendingRequest = false;
-      document.querySelector(".loading-more").classList.add("hidden");
-      await saveMiningResult();
-    } catch (error) {
-      console.error("Fetch Error:", error.message);
-      let errorMessage = error.message;
-
-      let errorContent = '<div class="quote-item error-quote"><strong>Oops! Failed to fetch</strong>GitHub did not return repository results. Please try again in a moment.</div>';
-
-      if (errorMessage.includes("rate limit")) {
-        errorContent = '<div class="quote-item error-quote"><strong>GitHub rate limit exceeded</strong>Wait another hour for GitHub to refresh your rate limit.</div>';
-      }
-      document.querySelector(".main-content").innerHTML = errorContent;
-
-      trendingRequest = false;
-      document.querySelector(".loading-more").classList.add("hidden");
+    if (repoResult.status === "rejected") {
+      console.error("GitHub fetch failed:", repoResult.reason.message);
     }
+    if (hnResult.status === "rejected") {
+      console.error("Hacker News fetch failed:", hnResult.reason.message);
+    }
+
+    const finalHtml = generateBatchHtml({
+      repositories: repoResult.status === "fulfilled" ? repoResult.value : null,
+      repoError: repoResult.status === "rejected" ? repoResult.reason : null,
+      stories: hnResult.status === "fulfilled" ? hnResult.value : [],
+      hnError: hnResult.status === "rejected" ? hnResult.reason : null,
+      lowerDate: dateRange.lower,
+      upperDate: dateRange.upper,
+    });
+
+    document.querySelector(".main-content").insertAdjacentHTML("beforeend", finalHtml);
+
+    // Only cache a clean batch. Caching a failure would pin the error card or
+    // the rail note in place for the 3h TTL, long after the source recovers.
+    if (repoResult.status === "fulfilled" && hnResult.status === "fulfilled") {
+      await saveMiningResult();
+    }
+
+    trendingRequest = false;
+    document.querySelector(".loading-more").classList.add("hidden");
   }
 
 
   async function handleFilterChange() {
     requestCount++;
     document.querySelector(".main-content").innerHTML = ""; // Clear existing repos
-    await fetchTrendingRepos(); // Fetch with new filters
+    await fetchNextBatch(); // Fetch with new filters
   }
 
   function bindUI() {
 
     window.addEventListener("scroll", async () => {
       if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
-        await fetchTrendingRepos();
+        await fetchNextBatch();
       }
     });
 
@@ -500,6 +639,100 @@ document.addEventListener('DOMContentLoaded', () => {
 
     syncSearchClear();
     bindThemeToggle();
+    bindRailResizer();
+  }
+
+  function bindRailResizer() {
+    const main = document.querySelector(".main-content");
+    const minGridWidth = 320;
+    let drag = null;
+
+    function currentRailWidth() {
+      const width = parseFloat(
+        getComputedStyle(document.documentElement).getPropertyValue("--rail-width")
+      );
+      return width > 0 ? width : railWidthDefault;
+    }
+
+    // Widening the rail must always leave the repo grid something to work with.
+    // The handle track and the two gaps sit between them and cost width too.
+    function maxRailWidth(handle) {
+      const body = handle.parentElement;
+      const gap = parseFloat(getComputedStyle(body).columnGap) || 0;
+      const between = handle.offsetWidth + gap * 2;
+
+      return Math.max(railWidthMin, body.clientWidth - minGridWidth - between);
+    }
+
+    function persistRailWidth() {
+      localStorage.setItem(railWidthKey, String(Math.round(currentRailWidth())));
+    }
+
+    // Delegated: batches arrive later from scrolling and from the HTML cache.
+    main.addEventListener("pointerdown", (event) => {
+      const handle = event.target.closest(".batch-resizer");
+      if (!handle) {
+        return;
+      }
+
+      drag = {
+        startX: event.clientX,
+        startWidth: currentRailWidth(),
+        max: maxRailWidth(handle),
+      };
+
+      // Capture so the drag survives the pointer leaving the 1px handle.
+      handle.setPointerCapture(event.pointerId);
+      document.body.classList.add("is-resizing");
+      event.preventDefault();
+    });
+
+    main.addEventListener("pointermove", (event) => {
+      if (!drag) {
+        return;
+      }
+
+      // Dragging left widens the rail.
+      applyRailWidth(clampRailWidth(drag.startWidth - (event.clientX - drag.startX), drag.max));
+    });
+
+    function endDrag() {
+      if (!drag) {
+        return;
+      }
+
+      drag = null;
+      document.body.classList.remove("is-resizing");
+      persistRailWidth();
+    }
+
+    main.addEventListener("pointerup", endDrag);
+    main.addEventListener("pointercancel", endDrag);
+
+    main.addEventListener("keydown", (event) => {
+      const handle = event.target.closest(".batch-resizer");
+      if (!handle) {
+        return;
+      }
+
+      const step = event.key === "ArrowLeft" ? 24 : event.key === "ArrowRight" ? -24 : 0;
+      if (step === 0) {
+        return;
+      }
+
+      event.preventDefault();
+      applyRailWidth(clampRailWidth(currentRailWidth() + step, maxRailWidth(handle)));
+      persistRailWidth();
+    });
+
+    main.addEventListener("dblclick", (event) => {
+      if (!event.target.closest(".batch-resizer")) {
+        return;
+      }
+
+      applyRailWidth(railWidthDefault);
+      persistRailWidth();
+    });
   }
 
   function bindThemeToggle() {
@@ -537,7 +770,7 @@ document.addEventListener('DOMContentLoaded', () => {
     bindUI();
     createLanguageFilter();
     await populateFilters();
-    await fetchTrendingRepos();
+    await fetchNextBatch();
   }
 
   init(); // Call the init function to start everything
