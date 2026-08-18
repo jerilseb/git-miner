@@ -545,15 +545,27 @@
         }
 
         .hn-item {
+            /* The comment icon has to match the title's first line box, so both
+               of them read these metrics rather than repeating the numbers. */
+            --hn-title-size: 13px;
+            --hn-title-line: 1.4;
             min-width: 0;
         }
 
+        .hn-item__head {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
         .hn-item__title {
+            flex: 1;
+            min-width: 0;
             display: block;
             color: var(--text);
-            font-size: 13px;
+            font-size: var(--hn-title-size);
             font-weight: 500;
-            line-height: 1.4;
+            line-height: var(--hn-title-line);
         }
 
         .hn-item__title:hover {
@@ -589,15 +601,28 @@
         }
 
         .hn-comments {
+            flex: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            height: calc(var(--hn-title-size) * var(--hn-title-line));
             color: var(--muted);
-            text-decoration: underline;
-            text-decoration-color: var(--border-strong);
-            text-underline-offset: 2px;
+            font-size: 11px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .hn-comments svg {
+            width: 13px;
+            height: 13px;
+        }
+
+        .hn-comments span {
+            min-width: 3ch;
+            text-align: right;
         }
 
         .hn-comments:hover {
             color: var(--accent);
-            text-decoration-color: var(--accent);
         }
 
         .rail-note {
@@ -900,6 +925,9 @@
             background: light-dark(rgba(23, 23, 26, 0.32), rgba(0, 0, 0, 0.55));
         }
 
+        /* The drawer stays pinned to the right edge; only its width moves, and
+           the clamp keeps the bounds here so the handle's JS just stores a
+           number it can hand back. */
         .comments-panel {
             position: absolute;
             top: 0;
@@ -907,8 +935,7 @@
             bottom: 0;
             display: flex;
             flex-direction: column;
-            width: min(680px, 100vw);
-            border-left: 1px solid var(--border);
+            width: clamp(340px, var(--comments-width, 680px), 60vw);
             background: var(--bg);
         }
 
@@ -920,6 +947,43 @@
             padding: 16px 20px;
             border-bottom: 1px solid var(--border);
             background: var(--surface);
+        }
+
+        /* The drawer's left edge is its drag handle, built like the rail's
+           divider: 1px in the layout, with the hit area widened by ::after.
+           It replaces the panel's border, so it is always visible. */
+        .comments-resize {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            width: 1px;
+            background: var(--border);
+            cursor: col-resize;
+            touch-action: none;
+        }
+
+        .comments-resize::after {
+            content: "";
+            position: absolute;
+            inset: 0 -8px;
+        }
+
+        .comments-resize:hover,
+        body.is-resizing .comments-resize {
+            background: var(--accent);
+        }
+
+        /* Too narrow for a drawer beside the page, which also makes the handle
+           meaningless: the same trade the rail makes at this width. */
+        @media (max-width: 620px) {
+            .comments-panel {
+                width: 100%;
+            }
+
+            .comments-resize {
+                display: none;
+            }
         }
 
         .comments-head__text {
@@ -1213,6 +1277,7 @@
                 </button>
             </header>
             <div class="comments-body" id="comments-body"></div>
+            <div class="comments-resize" id="comments-resize" title="Drag to resize"></div>
         </aside>
     </div>
 </body>

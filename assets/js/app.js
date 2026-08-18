@@ -262,11 +262,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     return `
       <li class="hn-item">
-        <a href="${titleUrl}" class="hn-item__title" target="_blank" rel="noopener noreferrer">${title}</a>
+        <div class="hn-item__head">
+          <a href="${titleUrl}" class="hn-item__title" target="_blank" rel="noopener noreferrer">${title}</a>
+          <a href="${escapeHtml(threadUrl)}" class="hn-comments" target="_blank" rel="noopener noreferrer" title="${comments} comments" aria-label="${comments} comments">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M14 9.5A2.5 2.5 0 0 1 11.5 12H8l-3.5 2.5V12H4a2.5 2.5 0 0 1-2.5-2.5v-5A2.5 2.5 0 0 1 4 2h7.5A2.5 2.5 0 0 1 14 4.5Z" />
+            </svg>
+            <span>${comments}</span>
+          </a>
+        </div>
         <div class="hn-item__meta">
           <span class="hn-points">▲ ${compactNumber(story.points)}</span>
           ${domain ? `<span class="hn-domain" title="${domain}">${domain}</span>` : ""}
-          <a href="${escapeHtml(threadUrl)}" class="hn-comments" target="_blank" rel="noopener noreferrer">${comments} comments</a>
           <span class="hn-time">◷ ${timeAgo(story.created_at)}</span>
         </div>
       </li>
@@ -280,6 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const commentsTitle = document.getElementById("comments-title");
   const commentsSubtitle = document.getElementById("comments-subtitle");
   const commentsBody = document.getElementById("comments-body");
+  const commentsPanel = document.querySelector(".comments-panel");
   // Filled lazily below, once the cache helpers further down are defined.
   let commentsCache = new Map();
   let openCommentsStoryId = null;
@@ -371,6 +379,58 @@ document.addEventListener('DOMContentLoaded', () => {
       ? comments.map(commentHtml).join("")
       : `<p class="rail-note">No comments yet.</p>`;
     commentsBody.scrollTop = 0;
+  }
+
+  // ---------------------------------------------------------------
+  // Comments panel width: drag the drawer's left edge
+  // ---------------------------------------------------------------
+  const commentsWidthKey = "comments_width";
+
+  // The stylesheet clamps --comments-width, so the minimum and the 60% cap have
+  // one home and a width stored on a wide viewport can't overflow a narrow one.
+  function applyPanelWidth(width) {
+    commentsPanel.style.setProperty("--comments-width", `${Math.round(width)}px`);
+  }
+
+  function bindPanelResize() {
+    const handle = document.getElementById("comments-resize");
+    const stored = Number(localStorage.getItem(commentsWidthKey));
+    let drag = null;
+
+    if (stored > 0) {
+      applyPanelWidth(stored);
+    }
+
+    handle.addEventListener("pointerdown", (event) => {
+      // The rendered width rather than the stored one, which the clamp may have
+      // overridden; starting from anything else would jump on the first move.
+      drag = { startX: event.clientX, startWidth: commentsPanel.offsetWidth };
+
+      // Capture so the drag survives the pointer leaving the 1px handle.
+      handle.setPointerCapture(event.pointerId);
+      document.body.classList.add("is-resizing");
+      event.preventDefault();
+    });
+
+    handle.addEventListener("pointermove", (event) => {
+      if (drag) {
+        // The drawer is pinned right, so dragging left widens it.
+        applyPanelWidth(drag.startWidth - (event.clientX - drag.startX));
+      }
+    });
+
+    function endDrag() {
+      if (!drag) {
+        return;
+      }
+
+      drag = null;
+      document.body.classList.remove("is-resizing");
+      localStorage.setItem(commentsWidthKey, String(commentsPanel.offsetWidth));
+    }
+
+    handle.addEventListener("pointerup", endDrag);
+    handle.addEventListener("pointercancel", endDrag);
   }
 
   function closeCommentsPanel() {
@@ -466,6 +526,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function bindCommentsPanel() {
     commentsCache = loadCommentsCache();
+    bindPanelResize();
 
     // Delegated: batches arrive later from scrolling and from a cache restore.
     // Modified clicks fall through to the link's normal open-on-HN behaviour.
