@@ -880,6 +880,240 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* ---------------------------------------------------------------
+           Comments panel
+           --------------------------------------------------------------- */
+        body.comments-open {
+            overflow: hidden;
+        }
+
+        .comments-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+        }
+
+        .comments-backdrop {
+            position: absolute;
+            inset: 0;
+            background: light-dark(rgba(23, 23, 26, 0.32), rgba(0, 0, 0, 0.55));
+        }
+
+        .comments-panel {
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            width: min(680px, 100vw);
+            border-left: 1px solid var(--border);
+            background: var(--bg);
+        }
+
+        .comments-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface);
+        }
+
+        .comments-head__text {
+            min-width: 0;
+        }
+
+        .comments-title {
+            display: block;
+            color: var(--text);
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 1.4;
+            overflow-wrap: anywhere;
+        }
+
+        a.comments-title[href]:hover {
+            color: var(--accent);
+        }
+
+        .comments-subtitle {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 4px 10px;
+            margin-top: 5px;
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .comments-hn-link {
+            color: var(--muted);
+            text-decoration: underline;
+            text-decoration-color: var(--border-strong);
+            text-underline-offset: 2px;
+        }
+
+        .comments-hn-link:hover {
+            color: var(--accent);
+            text-decoration-color: var(--accent);
+        }
+
+        .comments-close {
+            display: grid;
+            place-items: center;
+            width: 30px;
+            height: 30px;
+            flex: 0 0 auto;
+            padding: 0;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--surface);
+            color: var(--muted);
+            cursor: pointer;
+            transition: border-color 120ms linear, color 120ms linear;
+        }
+
+        .comments-close:hover {
+            border-color: var(--border-strong);
+            color: var(--text);
+        }
+
+        .comments-close:focus-visible {
+            border-color: var(--accent);
+            outline: none;
+        }
+
+        .comments-close svg {
+            width: 13px;
+            height: 13px;
+        }
+
+        .comments-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 20px 32px;
+            scrollbar-width: thin;
+        }
+
+        .comments-loading {
+            display: grid;
+            place-items: center;
+            padding: 56px 0;
+        }
+
+        .comment {
+            padding: 14px 16px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--surface);
+        }
+
+        .comments-body > .comment + .comment {
+            margin-top: 12px;
+        }
+
+        .comment__head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 6px;
+        }
+
+        .comment__author {
+            color: var(--accent);
+            font-size: 12px;
+            font-weight: 600;
+            overflow-wrap: anywhere;
+        }
+
+        .comment__time {
+            flex: 0 0 auto;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .comment__text {
+            color: var(--text-soft);
+            font-size: 13px;
+            line-height: 1.55;
+            overflow-wrap: anywhere;
+        }
+
+        .comment__text p {
+            margin-bottom: 8px;
+        }
+
+        .comment__text p:last-child {
+            margin-bottom: 0;
+        }
+
+        .comment__text a {
+            color: var(--accent);
+            text-decoration: underline;
+            text-decoration-color: var(--border-strong);
+            text-underline-offset: 2px;
+        }
+
+        .comment__text a:hover {
+            text-decoration-color: var(--accent);
+        }
+
+        .comment__text pre {
+            margin: 8px 0;
+            padding: 10px 12px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--surface-sunken);
+        }
+
+        .comment__text code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 12px;
+        }
+
+        .comment-replies-toggle {
+            margin-top: 10px;
+            padding: 5px 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--surface-sunken);
+            color: var(--text-soft);
+            font-size: 12px;
+            cursor: pointer;
+            transition: border-color 120ms linear, color 120ms linear;
+        }
+
+        .comment-replies-toggle:hover {
+            border-color: var(--border-strong);
+            color: var(--text);
+        }
+
+        .comment-replies-toggle:focus-visible {
+            border-color: var(--accent);
+            outline: none;
+        }
+
+        /* Replies drop the card chrome; the left rule carries the nesting. */
+        .comment-children {
+            margin-top: 14px;
+            padding-left: 14px;
+            border-left: 2px solid var(--border);
+        }
+
+        .comment-children .comment {
+            padding: 0;
+            border: 0;
+            background: none;
+        }
+
+        .comment-children .comment + .comment {
+            margin-top: 16px;
+        }
     </style>
 </head>
 
@@ -958,6 +1192,25 @@
             <div class="spinner" aria-hidden="true"></div>
             <span>Mining repositories</span>
         </div>
+    </div>
+
+    <!-- Outside .main-content on purpose: the HTML cache must never capture it. -->
+    <div class="comments-overlay hidden" id="comments-overlay">
+        <div class="comments-backdrop" id="comments-backdrop"></div>
+        <aside class="comments-panel" role="dialog" aria-modal="true" aria-label="Hacker News comments">
+            <header class="comments-head">
+                <div class="comments-head__text">
+                    <a class="comments-title" id="comments-title" target="_blank" rel="noopener noreferrer"></a>
+                    <div class="comments-subtitle" id="comments-subtitle"></div>
+                </div>
+                <button type="button" class="comments-close" id="comments-close" aria-label="Close comments" title="Close (Esc)">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+                        <path d="M4 4l8 8M12 4l-8 8" />
+                    </svg>
+                </button>
+            </header>
+            <div class="comments-body" id="comments-body"></div>
+        </aside>
     </div>
 </body>
 

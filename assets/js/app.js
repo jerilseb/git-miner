@@ -42,6 +42,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Algolia rather than the official Firebase API: one request per window
   // instead of one per story, and it sorts by points for a date range.
   const hnApiUrl = "https://hn.algolia.com/api/v1/search";
+  // Items endpoint returns the whole comment tree in a single response.
+  const hnItemApiUrl = "https://hn.algolia.com/api/v1/items";
   // _v3: the cache holds rendered HTML, so the key has to change whenever the
   // markup does or existing users keep seeing the old layout for up to 3h.
   const miningResultKey = "last_mining_result_v3";
@@ -259,6 +261,194 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
       </li>
     `;
+  }
+
+  // ---------------------------------------------------------------
+  // Hacker News comments panel
+  // ---------------------------------------------------------------
+  const commentsOverlay = document.getElementById("comments-overlay");
+  const commentsTitle = document.getElementById("comments-title");
+  const commentsSubtitle = document.getElementById("comments-subtitle");
+  const commentsBody = document.getElementById("comments-body");
+  // Threads already opened this tab; a new tab starts fresh, so no TTL needed.
+  const commentsCache = new Map();
+  let openCommentsStoryId = null;
+
+  // Algolia returns comment text as raw HTML. Keep only HN's own formatting
+  // tags and http(s) links; everything else is unwrapped to its text.
+  const allowedCommentTags = new Set([
+    "P", "A", "I", "EM", "B", "STRONG", "CODE", "PRE", "BLOCKQUOTE", "UL", "OL", "LI", "BR",
+  ]);
+
+  function sanitizeCommentHtml(html) {
+    // A DOMParser document is inert: nothing loads or runs while cleaning.
+    const doc = new DOMParser().parseFromString(html || "", "text/html");
+
+    for (const node of [...doc.body.querySelectorAll("*")]) {
+      if (!allowedCommentTags.has(node.tagName)) {
+        node.replaceWith(...node.childNodes);
+        continue;
+      }
+
+      const href = node.tagName === "A" ? node.getAttribute("href") : null;
+      [...node.attributes].forEach((attr) => node.removeAttribute(attr.name));
+
+      if (href && /^https?:\/\//i.test(href)) {
+        node.setAttribute("href", href);
+        node.setAttribute("target", "_blank");
+        node.setAttribute("rel", "noopener noreferrer");
+      }
+    }
+
+    return doc.body.innerHTML;
+  }
+
+  // Drop deleted comments, but keep a deleted parent whose subtree still has
+  // visible replies so whole branches don't disappear with it.
+  function visibleComments(comments) {
+    return (comments || [])
+      .map((comment) => ({ ...comment, children: visibleComments(comment.children) }))
+      .filter((comment) => comment.text || comment.children.length > 0);
+  }
+
+  function countReplies(comment) {
+    return comment.children.reduce((total, child) => total + 1 + countReplies(child), 0);
+  }
+
+  function commentHtml(comment) {
+    const author = comment.author ? escapeHtml(comment.author) : "[deleted]";
+    const text = comment.text ? sanitizeCommentHtml(comment.text) : "<p>[deleted]</p>";
+    const replyCount = countReplies(comment);
+    const replyLabel = `${replyCount} ${replyCount === 1 ? "reply" : "replies"}`;
+
+    // Replies start collapsed, hackerweb-style; the toggle expands the subtree.
+    const repliesHtml = comment.children.length === 0 ? "" : `
+      <button type="button" class="comment-replies-toggle" aria-expanded="false"
+        data-label="${replyLabel}">${replyLabel}</button>
+      <div class="comment-children hidden">
+        ${comment.children.map(commentHtml).join("")}
+      </div>
+    `;
+
+    return `
+      <article class="comment">
+        <header class="comment__head">
+          <span class="comment__author">${author}</span>
+          <span class="comment__time">${timeAgo(comment.created_at)}</span>
+        </header>
+        <div class="comment__text">${text}</div>
+        ${repliesHtml}
+      </article>
+    `;
+  }
+
+  function renderCommentsThread(story) {
+    const threadUrl = `https://news.ycombinator.com/item?id=${encodeURIComponent(story.id)}`;
+    const comments = visibleComments(story.children);
+    const domain = storyDomain(story.url);
+
+    commentsTitle.textContent = story.title || "Untitled";
+    commentsTitle.href = story.url || threadUrl;
+
+    commentsSubtitle.innerHTML = `
+      <span class="hn-points">▲ ${compactNumber(story.points)}</span>
+      ${domain ? `<span class="hn-domain" title="${escapeHtml(domain)}">${escapeHtml(domain)}</span>` : ""}
+      <span class="hn-time">◷ ${timeAgo(story.created_at)}</span>
+      <a href="${escapeHtml(threadUrl)}" class="comments-hn-link" target="_blank" rel="noopener noreferrer">Open on HN</a>
+    `;
+
+    commentsBody.innerHTML = comments.length
+      ? comments.map(commentHtml).join("")
+      : `<p class="rail-note">No comments yet.</p>`;
+    commentsBody.scrollTop = 0;
+  }
+
+  function closeCommentsPanel() {
+    openCommentsStoryId = null;
+    commentsOverlay.classList.add("hidden");
+    document.body.classList.remove("comments-open");
+  }
+
+  async function openCommentsPanel(storyId) {
+    openCommentsStoryId = storyId;
+    commentsOverlay.classList.remove("hidden");
+    document.body.classList.add("comments-open");
+
+    const cached = commentsCache.get(storyId);
+    if (cached) {
+      renderCommentsThread(cached);
+      return;
+    }
+
+    commentsTitle.textContent = "Loading comments…";
+    commentsTitle.removeAttribute("href");
+    commentsSubtitle.innerHTML = "";
+    commentsBody.innerHTML = `
+      <div class="comments-loading"><div class="spinner" aria-hidden="true"></div></div>
+    `;
+
+    try {
+      const response = await fetch(`${hnItemApiUrl}/${encodeURIComponent(storyId)}`);
+      if (!response.ok) {
+        throw new Error(await describeResponseError(response));
+      }
+
+      const story = await response.json();
+      commentsCache.set(storyId, story);
+
+      // The panel may have been closed, or another story opened, while the
+      // request was in flight; a stale response must not clobber the newer one.
+      if (openCommentsStoryId === storyId) {
+        renderCommentsThread(story);
+      }
+    } catch (error) {
+      console.error("Comments fetch failed:", error.message);
+      if (openCommentsStoryId === storyId) {
+        commentsTitle.textContent = "Couldn't load comments";
+        commentsBody.innerHTML = `
+          <p class="rail-note">Hacker News did not return this thread. Please try again in a moment.</p>
+        `;
+      }
+    }
+  }
+
+  function bindCommentsPanel() {
+    // Delegated: batches arrive later from scrolling and from the HTML cache.
+    // Modified clicks fall through to the link's normal open-on-HN behaviour.
+    document.querySelector(".main-content").addEventListener("click", (event) => {
+      const link = event.target.closest(".hn-comments");
+      if (!link || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
+        return;
+      }
+
+      const storyId = new URL(link.href).searchParams.get("id");
+      if (!storyId) {
+        return;
+      }
+
+      event.preventDefault();
+      openCommentsPanel(storyId);
+    });
+
+    commentsBody.addEventListener("click", (event) => {
+      const toggle = event.target.closest(".comment-replies-toggle");
+      if (!toggle) {
+        return;
+      }
+
+      const nowHidden = toggle.nextElementSibling.classList.toggle("hidden");
+      toggle.setAttribute("aria-expanded", String(!nowHidden));
+      toggle.textContent = nowHidden ? toggle.dataset.label : "Hide replies";
+    });
+
+    document.getElementById("comments-close").addEventListener("click", closeCommentsPanel);
+    document.getElementById("comments-backdrop").addEventListener("click", closeCommentsPanel);
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !commentsOverlay.classList.contains("hidden")) {
+        closeCommentsPanel();
+      }
+    });
   }
 
   // The .error-quote class also latches further fetching, which is what stops
@@ -640,6 +830,7 @@ document.addEventListener('DOMContentLoaded', () => {
     syncSearchClear();
     bindThemeToggle();
     bindRailResizer();
+    bindCommentsPanel();
   }
 
   function bindRailResizer() {
