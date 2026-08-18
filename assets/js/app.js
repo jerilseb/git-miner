@@ -44,15 +44,25 @@ document.addEventListener('DOMContentLoaded', () => {
   const hnApiUrl = "https://hn.algolia.com/api/v1/search";
   // Items endpoint returns the whole comment tree in a single response.
   const hnItemApiUrl = "https://hn.algolia.com/api/v1/items";
-  // _v3: the cache holds rendered HTML, so the key has to change whenever the
-  // markup does or existing users keep seeing the old layout for up to 3h.
-  const miningResultKey = "last_mining_result_v3";
-  const miningTimeKey = "last_mining_time_v3";
+  // The cache stores trimmed API payloads rather than rendered markup, so this
+  // version only moves when that shape changes; a layout edit costs nothing
+  // because a restore replays the payloads through the live renderer.
+  const cacheKey = "gm_cache_v1";
+  const commentsCacheKey = "gm_comments_v1";
   const refreshDuration = 180; //minutes
-  let requestCount = 0;
+  // Threads move faster than the day's trending list, so they expire sooner.
+  const commentsRefreshDuration = 60; //minutes
+  // A deep scroll is cheap to replay from the API, so only the head of the page
+  // is stored and the tail is refetched.
+  const maxCachedWindows = 5;
+  const maxCachedThreads = 10;
+  const maxThreadBytes = 300000;
   let trendingRequest = false;
   const perPage = 30;
   const hnPerPage = 30;
+
+  // The v3 entries held rendered markup; nothing reads them any more.
+  ["last_mining_result_v3", "last_mining_time_v3"].forEach(dropCache);
 
   // Language filter elements
   const languageFilterButton = document.getElementById('language-filter-button');
@@ -270,8 +280,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const commentsTitle = document.getElementById("comments-title");
   const commentsSubtitle = document.getElementById("comments-subtitle");
   const commentsBody = document.getElementById("comments-body");
-  // Threads already opened this tab; a new tab starts fresh, so no TTL needed.
-  const commentsCache = new Map();
+  // Filled lazily below, once the cache helpers further down are defined.
+  let commentsCache = new Map();
   let openCommentsStoryId = null;
 
   // Algolia returns comment text as raw HTML. Keep only HN's own formatting
@@ -369,6 +379,47 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.classList.remove("comments-open");
   }
 
+  // Algolia returns a large object per comment; the panel reads four fields.
+  function trimComment(comment) {
+    return {
+      author: comment.author,
+      text: comment.text,
+      created_at: comment.created_at,
+      children: (comment.children || []).map(trimComment),
+    };
+  }
+
+  function trimThread(story) {
+    return {
+      id: story.id,
+      title: story.title,
+      url: story.url,
+      points: story.points,
+      created_at: story.created_at,
+      children: (story.children || []).map(trimComment),
+    };
+  }
+
+  function loadCommentsCache() {
+    const stored = readCache(commentsCacheKey);
+    const cutoff = Date.now() - commentsRefreshDuration * 60 * 1000;
+    const entries = stored && typeof stored === "object" ? Object.entries(stored) : [];
+
+    return new Map(entries.filter(([, entry]) => entry && entry.story && entry.savedAt > cutoff));
+  }
+
+  function saveCommentsCache() {
+    // Newest first, so the cap drops the least recently opened thread. An
+    // outsized thread stays in memory but is never persisted, otherwise one
+    // huge tree would blow the quota and take every other entry with it.
+    const entries = [...commentsCache.entries()]
+      .sort((a, b) => b[1].savedAt - a[1].savedAt)
+      .filter(([, entry]) => JSON.stringify(entry.story).length <= maxThreadBytes)
+      .slice(0, maxCachedThreads);
+
+    writeCache(commentsCacheKey, Object.fromEntries(entries));
+  }
+
   async function openCommentsPanel(storyId) {
     openCommentsStoryId = storyId;
     commentsOverlay.classList.remove("hidden");
@@ -376,7 +427,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const cached = commentsCache.get(storyId);
     if (cached) {
-      renderCommentsThread(cached);
+      renderCommentsThread(cached.story);
       return;
     }
 
@@ -393,8 +444,9 @@ document.addEventListener('DOMContentLoaded', () => {
         throw new Error(await describeResponseError(response));
       }
 
-      const story = await response.json();
-      commentsCache.set(storyId, story);
+      const story = trimThread(await response.json());
+      commentsCache.set(storyId, { savedAt: Date.now(), story });
+      saveCommentsCache();
 
       // The panel may have been closed, or another story opened, while the
       // request was in flight; a stale response must not clobber the newer one.
@@ -413,7 +465,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function bindCommentsPanel() {
-    // Delegated: batches arrive later from scrolling and from the HTML cache.
+    commentsCache = loadCommentsCache();
+
+    // Delegated: batches arrive later from scrolling and from a cache restore.
     // Modified clicks fall through to the link's normal open-on-HN behaviour.
     document.querySelector(".main-content").addEventListener("click", (event) => {
       const link = event.target.closest(".hn-comments");
@@ -681,54 +735,133 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
 
-  async function saveMiningResult() {
-    const huntResults = document.querySelector(".main-content").innerHTML;
-    if (!huntResults) {
+  function dropCache(key) {
+    try {
+      localStorage.removeItem(key);
+    } catch (error) {
+      // Storage is unavailable, which already means there is nothing to drop.
+    }
+  }
+
+  // A corrupt entry can never be read, so drop it rather than let every later
+  // read throw on it.
+  function readCache(key) {
+    try {
+      return JSON.parse(localStorage.getItem(key) || "null");
+    } catch (error) {
+      dropCache(key);
+      return null;
+    }
+  }
+
+  // Quota is the expected failure (a long scroll, or a profile with no writable
+  // storage). Dropping the entry keeps the page working; it refills next batch.
+  function writeCache(key, value) {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (error) {
+      dropCache(key);
+    }
+  }
+
+  // Only the fields the card renderers read survive, which is what makes a
+  // stored window a fraction of the markup it replaces.
+  function trimRepo(repository) {
+    return {
+      name: repository.name,
+      description: repository.description,
+      language: repository.language,
+      html_url: repository.html_url,
+      created_at: repository.created_at,
+      stargazers_count: repository.stargazers_count,
+      owner: {
+        login: repository.owner.login,
+        avatar_url: repository.owner.avatar_url,
+      },
+    };
+  }
+
+  function trimStory(story) {
+    return {
+      objectID: story.objectID,
+      title: story.title,
+      url: story.url,
+      points: story.points,
+      num_comments: story.num_comments,
+      created_at: story.created_at,
+    };
+  }
+
+  // Everything that shapes the two queries. A mismatch is a miss, which is what
+  // stops a cached search from being restored under an empty search box.
+  function querySignature() {
+    return JSON.stringify({
+      dateJump: document.getElementById("date-jump").value,
+      languages: [...selectedLanguages].sort(),
+      query: document.getElementById("search-query").value.trim(),
+    });
+  }
+
+  // Windows in the order they were fetched, newest date first.
+  const cachedWindows = [];
+  // Stamped from the first window, not the last write, so scrolling can't keep
+  // renewing the TTL on data that has already gone stale.
+  let cacheSavedAt = null;
+
+  function saveMiningResult() {
+    if (cachedWindows.length === 0) {
+      return;
+    }
+
+    // Past the cap the stored prefix can no longer change, so stop rewriting it
+    // on every scroll batch.
+    if (cachedWindows.length > maxCachedWindows) {
+      return;
+    }
+
+    writeCache(cacheKey, {
+      sig: querySignature(),
+      savedAt: cacheSavedAt,
+      windows: cachedWindows,
+    });
+  }
+
+  function restoreFromCache() {
+    const cache = readCache(cacheKey);
+
+    if (!cache || !Array.isArray(cache.windows) || cache.windows.length === 0) {
       return false;
     }
 
-    localStorage.setItem(miningResultKey, huntResults);
-    localStorage.setItem(miningTimeKey, new Date().toISOString().split('T')[0] + " " + new Date().toISOString().split('T')[1].split('.')[0]);
-
-  }
-
-
-  async function shouldRefresh() {
-    if (requestCount !== 0) {
-      return true;
+    if (cache.sig !== querySignature() || !(cache.savedAt > 0)) {
+      return false;
     }
 
-    const lastHuntResult = localStorage.getItem(miningResultKey);
-    const lastHuntTime = localStorage.getItem(miningTimeKey);
-
-
-    if (!lastHuntResult || !lastHuntTime || lastHuntResult.trim() === "undefined") {
-      return true;
+    if (Date.now() - cache.savedAt >= refreshDuration * 60 * 1000) {
+      return false;
     }
 
-    const now = new Date();
-    const then = new Date(lastHuntTime);
+    document.querySelector(".main-content").innerHTML = cache.windows.map((batch) =>
+      generateBatchHtml({
+        repositories: batch.repos,
+        repoError: null,
+        stories: batch.stories,
+        hnError: null,
+        lowerDate: batch.lower,
+        upperDate: batch.upper,
+      })
+    ).join("");
 
-    const diffInMilliseconds = now.getTime() - then.getTime();
-    const diffInMinutes = diffInMilliseconds / (1000 * 60);
-
-
-    if (diffInMinutes >= refreshDuration) {
-      return true;
-    }
-
-    document.querySelector(".main-content").innerHTML = lastHuntResult;
-    requestCount++;
-    return false;
+    // Scrolling on from here reads its cursor off the last restored .date-head,
+    // exactly as it would after a live fetch.
+    cachedWindows.push(...cache.windows);
+    cacheSavedAt = cache.savedAt;
+    return true;
   }
 
 
   async function fetchNextBatch() {
     if (trendingRequest !== false || document.querySelector(".error-quote")) {
-      return false;
-    }
-
-    if (!(await shouldRefresh())) {
       return false;
     }
 
@@ -763,10 +896,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.querySelector(".main-content").insertAdjacentHTML("beforeend", finalHtml);
 
-    // Only cache a clean batch. Caching a failure would pin the error card or
+    // Only cache a clean window. Caching a failure would pin the error card or
     // the rail note in place for the 3h TTL, long after the source recovers.
     if (repoResult.status === "fulfilled" && hnResult.status === "fulfilled") {
-      await saveMiningResult();
+      if (cacheSavedAt === null) {
+        cacheSavedAt = Date.now();
+      }
+
+      cachedWindows.push({
+        lower: dateRange.lower,
+        upper: dateRange.upper,
+        repos: repoResult.value.slice(0, perPage).map(trimRepo),
+        stories: hnResult.value.map(trimStory),
+      });
+
+      saveMiningResult();
     }
 
     trendingRequest = false;
@@ -775,7 +919,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   async function handleFilterChange() {
-    requestCount++;
+    // The next clean window rewrites the entry under the new signature.
+    cachedWindows.length = 0;
+    cacheSavedAt = null;
     document.querySelector(".main-content").innerHTML = ""; // Clear existing repos
     await fetchNextBatch(); // Fetch with new filters
   }
@@ -859,7 +1005,7 @@ document.addEventListener('DOMContentLoaded', () => {
       localStorage.setItem(railWidthKey, String(Math.round(currentRailWidth())));
     }
 
-    // Delegated: batches arrive later from scrolling and from the HTML cache.
+    // Delegated: batches arrive later from scrolling and from a cache restore.
     main.addEventListener("pointerdown", (event) => {
       const handle = event.target.closest(".batch-resizer");
       if (!handle) {
@@ -961,7 +1107,10 @@ document.addEventListener('DOMContentLoaded', () => {
     bindUI();
     createLanguageFilter();
     await populateFilters();
-    await fetchNextBatch();
+
+    if (!restoreFromCache()) {
+      await fetchNextBatch();
+    }
   }
 
   init(); // Call the init function to start everything

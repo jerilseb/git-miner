@@ -1194,7 +1194,8 @@
         </div>
     </div>
 
-    <!-- Outside .main-content on purpose: the HTML cache must never capture it. -->
+    <!-- Outside .main-content on purpose: a cache restore replaces that element's
+         innerHTML wholesale and would take the panel with it. -->
     <div class="comments-overlay hidden" id="comments-overlay">
         <div class="comments-backdrop" id="comments-backdrop"></div>
         <aside class="comments-panel" role="dialog" aria-modal="true" aria-label="Hacker News comments">
